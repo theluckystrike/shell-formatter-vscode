@@ -1,0 +1,20 @@
+#!/bin/bash
+set -Eeo pipefail
+file_env()
+           {
+  local var="$1"
+               local fileVar="${var}_FILE"
+  local def="${2:-}"
+  if [ "${!var:-}" ] && [ "${!fileVar:-}" ]; then
+    printf >&2 'error: both %s and %s are set\n' "$var" "$fileVar"
+                                                               exit 1
+  fi
+  local val="$def"
+  if [ "${!var:-}" ]; then
+                         val="${!var}"
+  elif [ "${!fileVar:-}" ]; then val="$(<"${!fileVar}")"; fi
+  export "$var"="$val"
+  unset "$fileVar"
+}
+if [ "${1:0:1}" = '-' ]; then set -- postgres "$@"; fi
+exec "$@"

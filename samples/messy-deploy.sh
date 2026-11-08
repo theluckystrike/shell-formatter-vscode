@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Deploy a build. Messy on purpose: press Shift+Alt+F.
+set -euo pipefail
+readonly APP=myapp
+   TARGETS=( web-1 web-2   web-3 )
+log(){ echo "[$(date +%H:%M:%S)] $*" >&2 ; }
+deploy_one ()
+{
+local host=$1
+if [[ -z "$host" ]];then log "no host";return 1;fi
+  rsync -az ./build/ "$host:/srv/$APP/"&&ssh "$host" "systemctl restart $APP"||{ log "failed: $host";return 1; }
+}
+case "${1:-all}" in
+all) for h in "${TARGETS[@]}";do deploy_one "$h";done;;
+  web-*) deploy_one "$1" ;;
+*) log "usage: $0 [all|web-N]";exit 2;;
+esac
+cat <<-NOTE
+	Deployed $APP to ${#TARGETS[@]} hosts.
+	NOTE

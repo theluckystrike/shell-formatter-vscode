@@ -1,0 +1,7 @@
+#!/usr/bin/env zsh
+typeset -A opts
+for f in *.txt; do
+echo   ${f:r}
+done
+function greet { print -r -- "hi $1" }
+greet world

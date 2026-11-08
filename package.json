@@ -1,0 +1,345 @@
+{
+  "name": "zovo-shell-formatter",
+  "displayName": "Bash & Shell Script Formatter: shfmt Built In, Format on Save",
+  "description": "Free and offline. Format shell scripts (bash, sh, zsh, bats, mksh) with shfmt compiled to WebAssembly: nothing to download or install. Reads .editorconfig, puts syntax errors in Problems, skips Dockerfiles and .env files, and checks that formatting keeps the same commands.",
+  "version": "0.1.0",
+  "publisher": "zovo",
+  "license": "MIT",
+  "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#1B1F2E",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.90.0",
+    "node": ">=18"
+  },
+  "categories": [
+    "Formatters",
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "shell format",
+    "shell formatter",
+    "bash formatter",
+    "shfmt",
+    "sh formatter",
+    "zsh formatter",
+    "bash beautify",
+    "shell script formatter",
+    "shell beautifier",
+    "format shell script",
+    "bash",
+    "shell",
+    "shellscript",
+    "sh",
+    "zsh",
+    "bats",
+    "mksh",
+    "posix",
+    "editorconfig",
+    "format on save",
+    "formatter",
+    "beautify",
+    "devops",
+    "offline",
+    "webassembly"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:shellscript",
+    "onLanguage:bats"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "shellscript",
+        "extensions": [
+          ".bats"
+        ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "shellFormatter.format",
+        "title": "Format This Script",
+        "category": "Shell Formatter",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "shellFormatter.setDefault",
+        "title": "Use as Default Formatter for Shell Scripts",
+        "category": "Shell Formatter"
+      },
+      {
+        "command": "shellFormatter.formatOnSave",
+        "title": "Turn On Format on Save for Shell Scripts",
+        "category": "Shell Formatter"
+      },
+      {
+        "command": "shellFormatter.copyCommand",
+        "title": "Copy the Matching shfmt Command (for CI)",
+        "category": "Shell Formatter"
+      },
+      {
+        "command": "shellFormatter.openSample",
+        "title": "Open a Sample Script",
+        "category": "Shell Formatter"
+      },
+      {
+        "command": "shellFormatter.menu",
+        "title": "Show Menu",
+        "category": "Shell Formatter"
+      },
+      {
+        "command": "shellFormatter.openWalkthrough",
+        "title": "Get Started",
+        "category": "Shell Formatter"
+      },
+      {
+        "command": "shellFormatter.supportDeveloper",
+        "title": "Support the developer",
+        "category": "Shell Formatter"
+      },
+      {
+        "command": "shellFormatter.moreViewers",
+        "title": "More free tools by Zovo",
+        "category": "Shell Formatter"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "shellFormatter.format",
+          "when": "editorLangId == shellscript || editorLangId == bats"
+        },
+        {
+          "command": "shellFormatter.copyCommand",
+          "when": "editorLangId == shellscript || editorLangId == bats"
+        },
+        {
+          "command": "shellFormatter.menu",
+          "when": "false"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "shellFormatter.format",
+          "when": "editorLangId == shellscript || editorLangId == bats",
+          "group": "1_modification@9"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Shell Formatter",
+      "properties": {
+        "shellFormatter.dialect": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "bash",
+            "posix",
+            "mksh",
+            "bats",
+            "zsh"
+          ],
+          "enumDescriptions": [
+            "From the first line (#!/bin/bash, #!/bin/sh, ...), then the file name (.bash, .zsh, .bats, .ksh). Bash when neither says.",
+            "GNU Bash.",
+            "POSIX sh (also dash and ash).",
+            "MirBSD Korn shell (also ksh).",
+            "Bats test files.",
+            "Z shell. shfmt's zsh support is new; files it cannot parse are left unchanged."
+          ],
+          "default": "auto",
+          "scope": "resource",
+          "description": "Shell dialect for parsing. Same as shfmt -ln. A shell_variant key in .editorconfig wins over this setting."
+        },
+        "shellFormatter.indent": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "default": null,
+          "minimum": 0,
+          "maximum": 16,
+          "scope": "resource",
+          "markdownDescription": "Indent. Empty (`null`) follows the editor: tabs, or spaces with the editor's tab size. `0` is tabs, a number above 0 is that many spaces (shfmt -i). `indent_style` and `indent_size` in .editorconfig win over this setting."
+        },
+        "shellFormatter.binaryNextLine": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Binary operators like && and | may start a line (shfmt -bn, EditorConfig binary_next_line)."
+        },
+        "shellFormatter.switchCaseIndent": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Indent the patterns inside case ... esac (shfmt -ci, EditorConfig switch_case_indent)."
+        },
+        "shellFormatter.spaceRedirects": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Put a space after redirect operators: > file (shfmt -sr, EditorConfig space_redirects)."
+        },
+        "shellFormatter.keepPadding": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Keep column alignment padding (shfmt -kp, EditorConfig keep_padding)."
+        },
+        "shellFormatter.functionNextLine": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Put the opening brace of a function on the next line (shfmt -fn, EditorConfig function_next_line)."
+        },
+        "shellFormatter.simplify": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Simplify the code, for example $(( $a + 1 )) to $((a + 1)) (shfmt -s). This changes code on purpose, so the same-commands check is off when it is on."
+        },
+        "shellFormatter.minify": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Minify the script: remove comments and spacing (shfmt -mn). Rarely wanted in an editor."
+        },
+        "shellFormatter.useEditorConfig": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Read the shfmt keys from .editorconfig files (indent_style, indent_size, shell_variant, binary_next_line, switch_case_indent, space_redirects, keep_padding, function_next_line, simplify, minify, ignore), the same way shfmt does."
+        },
+        "shellFormatter.verifyCommands": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Before a change is applied, parse the formatted script again and check that it runs the same commands as the original. If not, the file is left unchanged. Files over 256 KB skip this check."
+        },
+        "shellFormatter.skipFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            ".env",
+            ".env.*",
+            "*.env"
+          ],
+          "scope": "resource",
+          "description": "File names that are never formatted, even when they are open as shell scripts. * and ? are wildcards."
+        },
+        "shellFormatter.maxFileMB": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Files larger than this are not formatted, and a message says so."
+        },
+        "shellFormatter.timeoutSeconds": {
+          "type": "number",
+          "default": 10,
+          "minimum": 2,
+          "maximum": 120,
+          "description": "Stop formatting after this many seconds and leave the file unchanged. The editor never waits on it."
+        },
+        "shellFormatter.askForRating": {
+          "type": "boolean",
+          "default": true,
+          "description": "Ask for a Marketplace rating after scripts were formatted without an error in 2 sessions at least 4 hours apart. \"Later\" asks one more time after 7 days, \"No thanks\" never asks again. It never asks after an error or more than 2 times. Nothing is sent anywhere."
+        },
+        "shellFormatter.showSupportLinks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the Rate, More free viewers and Sponsor links in the status bar tooltip. Nothing is sent anywhere."
+        }
+      }
+    },
+    "walkthroughs": [
+      {
+        "id": "shellFormatter.start",
+        "title": "Get started with Shell Formatter",
+        "description": "Format bash, sh, zsh and bats scripts with shfmt. Nothing to install.",
+        "steps": [
+          {
+            "id": "format",
+            "title": "Format a script",
+            "description": "Open a .sh file and press Shift+Alt+F (Shift+Option+F on macOS). If VS Code asks which formatter to use, pick Shell Formatter.\n[Open the sample script](command:shellFormatter.openSample)\n[Use as default formatter](command:shellFormatter.setDefault)",
+            "media": {
+              "image": "images/formatted.png",
+              "altText": "A bash script formatted by Shell Formatter in VS Code, with the shfmt status bar item."
+            },
+            "completionEvents": [
+              "onCommand:shellFormatter.setDefault"
+            ]
+          },
+          {
+            "id": "save",
+            "title": "Format on save",
+            "description": "Turn on Format On Save to format each time you save.\n[Turn it on for shell scripts](command:shellFormatter.formatOnSave)",
+            "media": {
+              "markdown": "walkthrough/save.md"
+            },
+            "completionEvents": [
+              "onCommand:shellFormatter.formatOnSave"
+            ]
+          },
+          {
+            "id": "errors",
+            "title": "Syntax errors",
+            "description": "When shfmt cannot parse a script, the file stays unchanged and the Problems panel shows the line and column.",
+            "media": {
+              "image": "images/syntax-error.png",
+              "altText": "An unclosed here-document shown in the Problems panel by Shell Formatter."
+            }
+          },
+          {
+            "id": "options",
+            "title": "Options and .editorconfig",
+            "description": "Pick the indent, case indent and other shfmt options, or put them in .editorconfig so the whole team and CI get the same result.\n[Open settings](command:workbench.action.openSettings?%5B%22shellFormatter%22%5D)",
+            "media": {
+              "markdown": "walkthrough/options.md"
+            },
+            "completionEvents": [
+              "onCommand:workbench.action.openSettings"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node scripts/build.js --production",
+    "test": "node scripts/build.js --production && node --test \"test/*.test.js\"",
+    "package": "npm run build && npx -y @vscode/vsce package --no-dependencies -o dist/"
+  },
+  "dependencies": {
+    "sh-syntax": "0.8.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "@types/vscode": "~1.90.0"
+  },
+  "homepage": "https://github.com/theluckystrike/shell-formatter-vscode#readme",
+  "bugs": {
+    "url": "https://github.com/theluckystrike/shell-formatter-vscode/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theluckystrike/shell-formatter-vscode"
+  },
+  "sponsor": {
+    "url": "https://github.com/sponsors/theluckystrike"
+  }
+}

@@ -1,0 +1,14 @@
+**
+!dist/extension.js
+!dist/worker.js
+!dist/main.wasm
+!package.json
+!README.md
+!CHANGELOG.md
+!LICENSE
+!THIRD-PARTY-NOTICES.md
+!icon.png
+!images/formatted.png
+!images/syntax-error.png
+!walkthrough/**
+!samples/messy-deploy.sh
