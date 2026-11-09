@@ -26,7 +26,14 @@ function errorOut(e) {
     if (m) return { ok: false, kind: 'syntax', message: m[3], line: +m[1], column: +m[2], incomplete: !!e.incomplete };
     return { ok: false, kind: 'syntax', message: text, line: 0, column: 0, incomplete: !!e.incomplete };
   }
-  return { ok: false, kind: 'engine', message: String((e && e.message) || e) };
+  const raw = String((e && e.message) || e);
+  // The WebAssembly engine has a fixed stack. Very deep nesting (thousands of subshells or braces) makes it fail with a
+  // runtime error such as "memory access out of bounds". Say what happened in plain words and start a new engine.
+  if ((e && e.name === 'RuntimeError') || /memory access out of bounds|call stack|stack overflow|unreachable|out of memory/i.test(raw)) {
+    proc = null;
+    return { ok: false, kind: 'engine', message: 'This script is nested too deeply for the built-in shfmt engine, so the file was left unchanged.', detail: raw };
+  }
+  return { ok: false, kind: 'engine', message: raw };
 }
 
 function run(msg) {

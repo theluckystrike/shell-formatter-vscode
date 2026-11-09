@@ -155,3 +155,16 @@ test('an unsupported dialect number is an engine error, not a crash', async () =
   assert.equal(res.ok, false);
   assert.equal(res.kind, 'engine');
 });
+
+test('very deep nesting gives a plain message, no text, and the engine still works after it', async () => {
+  const deep = '#!/bin/sh\n' + '('.repeat(5000) + 'echo deep' + ')'.repeat(5000) + '\n';
+  const r = resolveOptions({ fileName: 'deep.sh', firstLine: '#!/bin/sh', settings: {}, editor: {} });
+  const res = await engine.format(deep, r.opts, 'deep.sh', true);
+  assert.equal(res.ok, false);
+  assert.equal(res.text, undefined);
+  if (res.kind === 'engine') assert.match(res.message, /nested too deeply/);
+  assert.doesNotMatch(res.message, /memory access out of bounds/);
+  const after = await engine.format('echo   hi\n', r.opts, 'after.sh', true);
+  assert.equal(after.ok, true);
+  assert.equal(after.text, 'echo hi\n');
+});
