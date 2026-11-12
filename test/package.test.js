@@ -13,12 +13,14 @@ test('engine floor ^1.90.0 and @types/vscode ~1.90.0 (OVX1)', () => {
   assert.equal(pk.devDependencies['@types/vscode'], '~1.90.0');
 });
 
-test('every word of each target phrase is in the display name, and the name is our own', () => {
+test('display name: 30 characters or less, the search phrase whole and first, and the name is our own', () => {
   const name = pk.displayName.toLowerCase();
-  for (const phrase of ['shell format', 'shell formatter', 'bash formatter', 'shfmt']) {
-    for (const w of phrase.split(' ')) assert.ok(new RegExp(`\\b${w}\\b`).test(name), `${w} missing`);
-  }
-  assert.ok(!/^shell[- ]format\b/.test(name), 'must not start like another listing name');
+  assert.ok(pk.displayName.length <= 30, pk.displayName);
+  assert.ok(name.startsWith('shell formatter '), 'phrase first');
+  assert.ok(/\bbash\b/.test(name) && /\bzsh\b/.test(name));
+  assert.ok(!['shell formatter', 'shell-format', 'shell format'].includes(name), 'not the whole name of another listing');
+  assert.ok(pk.description.toLowerCase().startsWith('shell formatter'));
+  assert.deepEqual(pk.keywords, ['shell formatter', 'bash formatter', 'shfmt', 'shell format', 'format on save']);
 });
 
 test('each shellFormatter.* setting read in the code is declared', () => {
@@ -30,6 +32,9 @@ test('each command in package.json is registered, and walkthrough command links 
   const registered = new Set([...src.matchAll(/registerCommand\(`\$\{SECTION\}\.(\w+)`/g)].map((m) => 'shellFormatter.' + m[1]));
   registered.add('shellFormatter.supportDeveloper');
   registered.add('shellFormatter.moreViewers');
+  // Zovo Pro: the license module registers its palette commands, src/reach.js the "Zovo Pro: <tool>" Explorer wrappers
+  for (const c of ['getPro', 'payWithPayPal', 'unlockWithSponsors', 'enterLicenseKey', 'removeLicense', 'payByCard']) registered.add('shellFormatter.' + c);
+  for (const t of require('../src/reach-config').tools) registered.add(`shellFormatter.zovoPro.${t.id}`);
   for (const c of pk.contributes.commands) assert.ok(registered.has(c.command), c.command);
   for (const step of pk.contributes.walkthroughs[0].steps) {
     for (const m of step.description.matchAll(/command:(shellFormatter\.\w+)/g)) assert.ok(registered.has(m[1]), m[1]);
@@ -39,7 +44,7 @@ test('each command in package.json is registered, and walkthrough command links 
 });
 
 test('no network code in the shipped sources', () => {
-  for (const f of ['extension.js', 'engine.js', 'worker.js', 'options.js', 'edits.js', 'verify.js']) {
+  for (const f of ['extension.js', 'engine.js', 'worker.js', 'options.js', 'edits.js', 'verify.js', 'pro.js', 'protools.js', 'patch.js', 'reach.js']) {
     const t = fs.readFileSync(path.join(root, 'src', f), 'utf8');
     assert.ok(!/\b(fetch\(|https?\.request|http\.get|XMLHttpRequest|WebSocket|net\.connect)/.test(t), f);
   }

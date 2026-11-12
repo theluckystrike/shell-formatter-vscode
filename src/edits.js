@@ -83,4 +83,33 @@ function fmtSize(n) {
   return (n / 1024 / 1024).toFixed(1) + ' MB';
 }
 
-module.exports = { lineDiff, applyLineDiff, byteColToChar, dedentSelection, indentBack, hasNul, fmtSize };
+/**
+ * The indentation VS Code's "Detect Indentation" would pick for a file that is not open in an editor (the Zovo Pro
+ * folder tools): { insertSpaces, tabSize } from the leading whitespace of its lines, or the defaults when no line is
+ * indented. Here-document bodies are counted too; that only matters for files that mix both styles.
+ */
+function guessIndent(text, defaults) {
+  let tabs = 0;
+  let spaces = 0;
+  const steps = new Map();
+  let prev = 0;
+  for (const line of String(text).split('\n')) {
+    if (!line.trim()) continue;
+    const m = /^[ \t]*/.exec(line)[0];
+    if (m.startsWith('\t')) { tabs++; prev = 0; continue; }
+    const n = m.length;
+    if (n > 0) spaces++;
+    const d = n - prev;
+    if (d >= 2 && d <= 8) steps.set(d, (steps.get(d) || 0) + 1);
+    prev = n;
+  }
+  if (!tabs && !spaces) return { insertSpaces: defaults.insertSpaces, tabSize: defaults.tabSize };
+  if (tabs >= spaces) return { insertSpaces: false, tabSize: defaults.tabSize };
+  let best = defaults.tabSize;
+  let count = 0;
+  for (const [d, c] of steps) if (c > count || (c === count && d < best)) { best = d; count = c; }
+  return { insertSpaces: true, tabSize: best };
+}
+
+module.exports = {
+  guessIndent, lineDiff, applyLineDiff, byteColToChar, dedentSelection, indentBack, hasNul, fmtSize };

@@ -29,22 +29,22 @@ const SELF_ID = "zovo.zovo-shell-formatter";
 const LIVE = [
   [
     "zovo.pdf-viewer-dark",
-    "PDF Viewer & PDF Reader",
+    "PDF Viewer & PDF Reader to Read and View PDF (Dark Mode)",
     "reads PDFs with a real dark mode, search, an outline and thumbnails."
   ],
   [
     "zovo.table-viewer-vscode",
-    "XLSX Viewer for Excel, CSV & Parquet",
+    "XLSX Viewer, Excel Viewer, CSV Viewer & Parquet Viewer (XLS, CSV Preview)",
     "opens CSV, TSV, Excel and Parquet files as a sortable, filterable table."
   ],
   [
     "zovo.docx-viewer-vscode",
-    "DOCX Viewer, Word Viewer & DOCX Preview (Dark Mode)",
+    "DOCX Viewer & ODT Viewer, Word Document Preview (Dark Mode)",
     "previews Word and ODT files with dark mode, an outline and search."
   ],
   [
     "zovo.pptx-slide-viewer",
-    "PPTX Viewer & PPT Viewer, PowerPoint Viewer & Slideshow",
+    "PPTX Viewer & PowerPoint Preview, PPT Presentation Slideshow",
     "shows PowerPoint slides, thumbnails and speaker notes."
   ],
   [
@@ -59,7 +59,7 @@ const LIVE = [
   ],
   [
     "zovo.sqlite-table-viewer",
-    "SQLite DB Viewer & SQLite Viewer, Database Viewer (Read-Only)",
+    "SQLite Editor & Viewer, SQLite3 Database Browser (Edit Cells, CSV Import)",
     "browses SQLite tables read-only and runs SELECT queries."
   ],
   [
@@ -74,7 +74,7 @@ const LIVE = [
   ],
   [
     "zovo.video-preview-with-sound",
-    "MP4, MOV & MKV Viewer, Video Player with Sound",
+    "MP4, MOV, MKV & WebM Viewer, Video Player & Preview with Sound",
     "plays MP4, MOV, MKV and WebM files with their sound."
   ],
   [
@@ -154,8 +154,8 @@ const LIVE = [
   ],
   [
     "zovo.zovo-file-viewers",
-    "File Viewers Pack",
-    "installs the PDF, table, Word, PowerPoint, HDF5 and tensor viewers in one step."
+    "Office Viewer Pack",
+    "installs the Word, Excel and CSV, PowerPoint and PDF viewers in one step."
   ],
   [
     "zovo.zip-archive-explorer",
@@ -170,105 +170,288 @@ const LIVE = [
   [
     "zovo.font-viewer-vscode",
     "Font Viewer, TTF Viewer, OTF & WOFF Viewer, Font Preview",
-    "opens TTF, OTF, WOFF, WOFF2 and TTC fonts with a glyph grid, a type tester with variable axes and the license fields."
+    "opens TTF, OTF and WOFF fonts with a glyph grid and a type tester."
+  ],
+  [
+    "zovo.zovo-vcd-waveform-viewer",
+    "VCD Viewer & Waveform Viewer (Verilog, No Signal Limit)",
+    "opens Verilog, SystemVerilog and VHDL VCD waveforms with no signal limit."
   ],
   [
     "zovo.mermaid-viewer",
-    "Mermaid Viewer & Mermaid Preview (MMD Diagram, No Sign-In)",
-    "no sign-in, no AI. Zoom, pan and export SVG or PNG. Free Mermaid diagram viewer and Mermaid preview for .mmd files and mermaid blocks in Markdown, works offline."
+    "Mermaid Diagram Viewer & Mermaid Editor, Live Mermaid Preview (MMD, PNG/SVG, Offline)",
+    "edits .mmd files and Mermaid blocks in Markdown with a live diagram preview."
+  ],
+  [
+    "zovo.swagger-openapi-viewer",
+    "Swagger Viewer & OpenAPI Viewer (OpenAPI Preview, 3.1, $ref)",
+    "lints and previews OpenAPI and Swagger specs in YAML or JSON."
   ],
   [
     "zovo.xmind-mind-map-viewer",
     "XMind Viewer & Mind Map Viewer (XMind 8, 2020+)",
-    "xMind viewer and mind map viewer for VS Code. Opens XMind 2020+, XMind Zen and XMind 8 files with every sheet as a tab, relationships, boundaries, summaries, markers, notes, pictures and LaTeX equations. Also opens FreeMind .mm and OPML. Search, collapse, PNG, SVG and Markdown export. Free, works offline."
-  ],
-  [
-    "zovo.zovo-geo-map-viewer",
-    "GeoJSON Viewer, KML Viewer & GPX Viewer (Map Preview, Shapefile)",
-    "geoJSON viewer, KML viewer and GPX viewer with a map preview in VS Code. Also opens shapefiles (SHP, zipped), KMZ, TopoJSON, WKT and CSV with lat/lon: feature table, properties, GPX distance and elevation profile, reprojection from .prj, PNG export. Free, no sign-in, works offline."
-  ],
-  [
-    "zovo.zovo-hex-viewer",
-    "Hex Viewer & Binary Viewer, Hex Editor (Large Files)",
-    "hex viewer, binary viewer and hex editor for VS Code that opens files of any size (4 GB and more) in under a second. Insert and delete bytes, compare two files byte by byte, go to offset, find hex or text, a data inspector, copy as C array or base64. Free, works offline."
-  ],
-  [
-    "zovo.zovo-pcap-viewer",
-    "PCAP Viewer & PCAPNG Viewer (Packet Capture Analyzer)",
-    "pCAP viewer and PCAPNG viewer for VS Code: a packet capture analyzer with a packet list, protocol tree and linked hex pane, display filters, follow TCP stream, conversations and endpoints. Opens .pcap.gz and 1 GB captures. Pure JS, nothing to install (no Wireshark or sharkd). Free, no sign-in, works offline."
-  ],
-  [
-    "zovo.zovo-svg-viewer",
-    "SVG Viewer & SVG Preview (Zoom, PNG Export)",
-    "live preview beside the editor, zoom at the cursor, scripts never run. SVG preview and SVG viewer for VS Code: pan, viewBox outline, checkerboard or custom background, sprite sheet grid for <symbol>, .svgz, and PNG export at 1x to 8x. Free, offline."
-  ]
-];
-const QUEUED = [
-  [
-    "zovo.swagger-openapi-viewer",
-    "Swagger Viewer & OpenAPI Viewer (OpenAPI Preview, 3.1, $ref)",
-    "swagger viewer and OpenAPI preview for VS Code. Live Swagger UI or reference layout for OpenAPI 3.1, 3.0 and Swagger 2.0 in YAML or JSON, with external $ref across files, a problem list with line numbers and copyable text. No server, no port, no sign-in, works offline.",
-    "https://github.com/theluckystrike/swagger-openapi-viewer-vscode"
-  ],
-  [
-    "zovo.vcd-waveform-viewer",
-    "VCD Viewer & Waveform Viewer (Verilog, No Signal Limit)",
-    "vCD viewer and waveform viewer for Verilog, SystemVerilog and VHDL simulations. Free with no signal limit: signal tree with search, cursor and two markers, bus grouping, hex, binary, signed and ASCII radix, and VCD files of 1 GB and more. A GTKWave-style viewer inside VS Code that works offline.",
-    "https://github.com/theluckystrike/vcd-viewer-vscode"
+    "opens XMind, FreeMind and OPML mind maps, with search and export."
   ],
   [
     "zovo.zovo-auto-rename-tag",
-    "Auto Rename Tag & Auto Close Tag (Highlight Matching Tag, JSX, Vue)",
-    "auto rename tag and auto close tag as you type in HTML, JSX/TSX, Vue, Svelte, PHP, Blade, Twig, XML and Markdown. One undo step for both tags, never pairs <br> or TypeScript generics, highlights the matching tag. Free, no sign-in, works offline.",
-    "https://github.com/theluckystrike/auto-rename-tag-vscode"
+    "Tag Auto Rename & Close Tag Sync (Matching Tag Highlight, JSX, Vue)",
+    "renames and closes the matching tag as you type in HTML, JSX and Vue."
   ],
   [
     "zovo.zovo-code-screenshot",
     "Code Screenshot & Code Snapshot (Copy Code as Image, PNG/SVG)",
-    "code screenshot and code snapshot in one key: select code, press Cmd+Alt+C (Shift+Alt+C) and a PNG of it is on your clipboard, in your editor theme, font and colors. Save PNG or SVG, line numbers, highlights, window frame, backgrounds. Free, no sign-in, works offline.",
-    "https://github.com/theluckystrike/code-screenshot-vscode"
+    "copies the selected code as a PNG in your editor theme."
+  ],
+  [
+    "zovo.zovo-docstring-generator",
+    "Docstring Generator & Python Docstring Updater (Google, NumPy, Sphinx, JSDoc)",
+    "writes Google, NumPy or Sphinx docstrings for Python functions and classes."
+  ],
+  [
+    "zovo.zovo-geo-map-viewer",
+    "GeoJSON Viewer, KML Viewer & GPX Viewer (Map Preview, Shapefile)",
+    "shows GeoJSON, KML, GPX and shapefiles on a map, with a table of properties."
+  ],
+  [
+    "zovo.zovo-hex-viewer",
+    "Hex Viewer & Binary Viewer, Hex Editor (Large Files)",
+    "opens binary files of any size, with find, a data inspector and byte editing."
   ],
   [
     "zovo.zovo-html-css-class-intellisense",
-    "HTML CSS Support & CSS Class IntelliSense (Class Names, ID Completion)",
-    "free and offline. CSS class names and id completion in HTML, React, Vue, Svelte, Angular, PHP and Blade, from every CSS, SCSS and Less file in your project, <style> blocks, linked style sheets and CSS modules. Go to definition and hover. Light on CPU in big monorepos.",
-    "https://github.com/theluckystrike/html-css-class-intellisense-vscode"
+    "Class Names IntelliSense & CSS Support for HTML Templates (ID Completion)",
+    "completes CSS class names from your project in HTML, React and Vue."
   ],
   [
     "zovo.zovo-html-preview",
     "HTML Preview & HTML Viewer (Live, CSS and Images, Offline)",
-    "free HTML preview and HTML viewer beside your editor. Linked CSS, JS and images load, it updates as you type, and nothing is sent anywhere. No sign-in, no server, works offline.",
-    "https://github.com/theluckystrike/html-preview-vscode"
+    "previews HTML beside the editor with its CSS, JS and images."
+  ],
+  [
+    "zovo.zovo-js-ts-scratchpad",
+    "JavaScript Playground & TypeScript Scratchpad with Inline Values (Live JS and TS Runner)",
+    "shows the value of each line of JavaScript or TypeScript as you type."
+  ],
+  [
+    "zovo.zovo-linker-map-viewer",
+    "Linker Map Viewer & Map File Analyzer (GNU ld, Memory Usage)",
+    "shows FLASH and RAM use from GNU ld, lld, IAR and Keil map files."
+  ],
+  [
+    "zovo.zovo-load-testing",
+    "Load Testing & HTTP Load Tests for APIs (Performance Testing, Reports)",
+    "load tests HTTP APIs from a small YAML file, with no account."
+  ],
+  [
+    "zovo.zovo-mongodb-client",
+    "MongoDB Client & MongoDB GUI: Query, Edit Documents, Aggregation & Indexes",
+    "queries and edits MongoDB documents in a grid or as JSON."
+  ],
+  [
+    "zovo.zovo-oracle-sqlserver-client",
+    "Oracle SQL & SQL Server Query Client (MSSQL, T-SQL, PLSQL, Oracle Database Tool)",
+    "runs Oracle SQL and T-SQL and browses tables."
+  ],
+  [
+    "zovo.zovo-parquet-viewer",
+    "Parquet Grid Viewer: Large File Explorer, Schema & Nested Data (Zovo)",
+    "opens Parquet files as a fast grid, with no Python."
+  ],
+  [
+    "zovo.zovo-pcap-viewer",
+    "PCAP Viewer & PCAPNG Viewer (Packet Capture Analyzer)",
+    "opens PCAP and PCAPNG captures with a packet list, filters and a hex pane."
   ],
   [
     "zovo.zovo-regex-preview",
     "Regex Preview & Regex Tester (Railroad Diagram Visualizer, Groups)",
-    "regex preview and regex tester beside your code: click \"Test regex\" above a regex in JS, TS, Python, Go, Java, C#, PHP, Ruby or Rust. Capture groups, replace preview, railroad diagram visualizer, explain mode, flavor warnings. Free, no sign-in, works offline.",
-    "https://github.com/theluckystrike/regex-preview-vscode"
+    "tests a regex from your code against sample text, with capture groups."
   ],
   [
     "zovo.zovo-rst-preview",
     "RST Preview & reStructuredText Preview (RST Viewer, No Python)",
-    "rST preview and reStructuredText preview for VS Code with no Python, no Sphinx and no setup. Live preview with scroll sync, grid and list tables, admonitions, code colors, math, images, includes, outline and HTML export. Free, works offline.",
-    "https://github.com/theluckystrike/rst-preview-vscode"
+    "previews reStructuredText with no Python and no Sphinx."
   ],
   [
     "zovo.zovo-rtf-viewer",
     "RTF Viewer & Rich Text Viewer (RTF Preview, Dark Mode)",
-    "free RTF viewer for VS Code. Open .rtf files as a read-only page with tables, pictures, search, outline, zoom and dark mode. No sign-in, works offline, sends nothing anywhere.",
-    "https://github.com/theluckystrike/rtf-viewer-vscode"
+    "opens RTF files as a read-only page with tables, pictures and search."
+  ],
+  [
+    "zovo.zovo-run-cpp",
+    "Run C++ and C Code: One-Click Compile with GCC, G++, Clang (CPP Runner, Input Panel)",
+    "compiles and runs the current C or C++ file with gcc or clang."
   ],
   [
     "zovo.zovo-sarif-viewer",
     "SARIF Viewer (CodeQL, Semgrep & Static Analysis Results)",
-    "free SARIF viewer for CodeQL, Semgrep, ESLint, Bandit, Trivy and other static analysis results. Filter by level, baseline and suppression, step through code flows, open each result at its line. No sign-in, no network, works offline.",
-    "https://github.com/theluckystrike/sarif-viewer-vscode"
+    "shows SARIF results from CodeQL, Semgrep and ESLint, with filters."
+  ],
+  [
+    "zovo.zovo-sql-client",
+    "Postgres & MySQL Query Client - SQL Database Tool (SQLite, CSV Export)",
+    "runs Postgres and MySQL queries, edits rows and exports CSV."
+  ],
+  [
+    "zovo.zovo-sql-formatter",
+    "SQL Safe Formatter & Format on Save: PostgreSQL, MySQL, T-SQL, PL/SQL (Zovo)",
+    "formats SQL in 20 dialects and keeps strings and comments as written."
+  ],
+  [
+    "zovo.zovo-svg-viewer",
+    "SVG Preview & SVG Viewer (PNG Export)",
+    "previews SVG beside the editor and exports PNG; scripts never run."
+  ],
+  [
+    "zovo.zovo-svn-client",
+    "SVN Client & Subversion Source Control (Commit, Blame, Log, Diff)",
+    "brings SVN commit, diff, log and blame to the Source Control view."
+  ]
+];
+const QUEUED = [
+  [
+    "zovo.zovo-apk-analyzer",
+    "APK Analyzer & APK Viewer (AndroidManifest, DEX Method Count, APK Size)",
+    "opens APK files: manifest, permissions, DEX method counts and size by folder.",
+    "https://github.com/theluckystrike/apk-analyzer-vscode"
+  ],
+  [
+    "zovo.zovo-azure-storage-explorer",
+    "Azure Storage & Azure Blob Storage Explorer (Blob, Queue, Table, Azurite)",
+    "browses Azure Blob, Queue and Table Storage with a connection string.",
+    "https://github.com/theluckystrike/azure-storage-explorer-vscode"
+  ],
+  [
+    "zovo.zovo-can-dbc-viewer",
+    "DBC Viewer & CAN Log Viewer (BLF Viewer, ASC, TRC, candump Decoder)",
+    "shows DBC messages and signals and decodes CAN logs (ASC, candump, BLF) into signals.",
+    "https://github.com/theluckystrike/can-dbc-viewer-vscode"
+  ],
+  [
+    "zovo.zovo-convert-to-markdown",
+    "Convert to Markdown: PDF to Markdown, PPTX to Markdown, DOCX to Markdown",
+    "turns PDF, Word, PowerPoint and Excel files into clean Markdown.",
+    "https://github.com/theluckystrike/convert-to-markdown-vscode"
+  ],
+  [
+    "zovo.zovo-cosmos-db-client",
+    "Cosmos DB Client & Azure Cosmos DB Explorer (CosmosDB NoSQL Query, Emulator)",
+    "runs Cosmos DB queries and edits items with a connection string or the emulator.",
+    "https://github.com/theluckystrike/cosmos-db-client-vscode"
+  ],
+  [
+    "zovo.zovo-dbml-viewer",
+    "DBML Viewer & ER Diagram (DBML Preview, SQL to ER Diagram, ERD)",
+    "draws DBML and SQL schemas as an ER diagram, with tables, keys and relations.",
+    "https://github.com/theluckystrike/dbml-viewer-vscode"
+  ],
+  [
+    "zovo.zovo-docx-editor",
+    "DOCX Editor & Word Editor (Edit Word Documents)",
+    "edits the text of Word files and keeps their layout, images and styles.",
+    "https://github.com/theluckystrike/docx-editor-vscode"
+  ],
+  [
+    "zovo.zovo-edi-viewer",
+    "EDI Viewer & X12 Viewer, EDIFACT Viewer (EDI Parser)",
+    "opens X12 and EDIFACT files as a tree of segments and elements with their names.",
+    "https://github.com/theluckystrike/edi-viewer-vscode"
+  ],
+  [
+    "zovo.zovo-elf-pe-viewer",
+    "ELF Viewer & PE Viewer (DLL, EXE, Mach-O Headers, Sections, Imports)",
+    "eLF viewer, PE viewer and DLL viewer for VS Code: open .so, .o, .exe, .dll, .sys and Mach-O .dylib files and read headers, sections, segments, imports, exports and symbols, with a hex view. Also an EXE viewer and Mach-O viewer for universal binaries. Read-only, no network, fast on 500 MB files.",
+    "https://github.com/theluckystrike/elf-pe-viewer-vscode"
+  ],
+  [
+    "zovo.zovo-excel-compare",
+    "Excel Compare & XLSX Diff (Compare Excel Files, CSV Diff, Spreadsheet Compare)",
+    "compares two Excel or CSV files cell by cell and shows what changed.",
+    "https://github.com/theluckystrike/excel-compare-vscode"
+  ],
+  [
+    "zovo.zovo-excel-to-markdown",
+    "Excel to Markdown Table & CSV to Markdown (Paste from Excel, Google Sheets, XLSX)",
+    "turns Excel and CSV tables into Markdown tables, from a file or a paste.",
+    "https://github.com/theluckystrike/excel-to-markdown-vscode"
+  ],
+  [
+    "zovo.zovo-folder-diff",
+    "Folder Compare & Folder Diff (Directory Compare, Word, Excel & Binary Files)",
+    "compares two folders side by side and opens a diff for any file.",
+    "https://github.com/theluckystrike/folder-diff-vscode"
+  ],
+  [
+    "zovo.zovo-git-commit-graph",
+    "Git Commit Graph & History Log (Branches, Compare, Blame)",
+    "shows every branch and tag as a commit graph, with search.",
+    "https://github.com/theluckystrike/git-commit-graph-vscode"
+  ],
+  [
+    "zovo.zovo-image-editor",
+    "Image Editor & Image Resizer (Crop, Annotate, Convert)",
+    "crops, resizes, rotates and marks up PNG, JPEG and WebP images.",
+    "https://github.com/theluckystrike/image-editor-vscode"
+  ],
+  [
+    "zovo.zovo-intel-hex-viewer",
+    "Intel HEX Viewer & S-Record Viewer (HEX, SREC, S19 Firmware Memory Map)",
+    "opens Intel HEX and S-record firmware images as a memory map with a hex view.",
+    "https://github.com/theluckystrike/intel-hex-viewer-vscode"
+  ],
+  [
+    "zovo.zovo-jar-viewer",
+    "JAR Viewer & Java Decompiler (Class File Viewer, Bytecode, CFR)",
+    "opens JAR and class files: browse classes, read bytecode and decompiled Java.",
+    "https://github.com/theluckystrike/jar-viewer-vscode"
+  ],
+  [
+    "zovo.zovo-markdown-export",
+    "Markdown to PDF & Markdown to Word (DOCX, HTML Export, No Chromium Download)",
+    "exports Markdown to PDF, Word and HTML with the browser you already have.",
+    "https://github.com/theluckystrike/markdown-export-vscode"
+  ],
+  [
+    "zovo.zovo-nuget-package-manager",
+    "NuGet Package Manager & NuGet Gallery: Manage NuGet Packages, Updates, Vulnerabilities",
+    "browses, installs and updates NuGet packages in .csproj projects.",
+    "https://github.com/theluckystrike/nuget-package-manager-vscode"
+  ],
+  [
+    "zovo.zovo-redis-client",
+    "Redis Client & Redis GUI: Keys, TTL, Streams, Cluster & Sentinel (Redis Viewer)",
+    "browses Redis keys and edits strings, hashes, lists and streams.",
+    "https://github.com/theluckystrike/redis-client-vscode"
+  ],
+  [
+    "zovo.zovo-s3-explorer",
+    "S3 Explorer & S3 Client, Bucket Browser for AWS, MinIO and Cloudflare R2",
+    "browses S3, MinIO and R2 buckets and opens objects read-only.",
+    "https://github.com/theluckystrike/s3-explorer-vscode"
   ],
   [
     "zovo.zovo-shell-formatter",
     "Bash & Shell Script Formatter: shfmt Built In, Format on Save",
-    "free and offline. Format shell scripts (bash, sh, zsh, bats, mksh) with shfmt compiled to WebAssembly: nothing to download or install. Reads .editorconfig, puts syntax errors in Problems, skips Dockerfiles and .env files, and checks that formatting keeps the same commands.",
+    "formats bash, sh and zsh scripts with shfmt, offline.",
     "https://github.com/theluckystrike/shell-formatter-vscode"
+  ],
+  [
+    "zovo.zovo-spreadsheet-editor",
+    "Spreadsheet Editor for CSV, Excel & XLSX - Edit Large Files, SQL Filter",
+    "edits CSV, TSV and Excel files as a spreadsheet, with undo.",
+    "https://github.com/theluckystrike/spreadsheet-editor-vscode"
+  ],
+  [
+    "zovo.zovo-spss-stata-viewer",
+    "SPSS Viewer & Stata Viewer (SAV, DTA, XPT Files)",
+    "opens SPSS .sav and Stata .dta files as a table with variable and value labels.",
+    "https://github.com/theluckystrike/spss-stata-viewer-vscode"
+  ],
+  [
+    "zovo.zovo-xml-xpath-tools",
+    "Format XML & XPath Tools: XML Formatter, Tree View, Minify (Zovo)",
+    "formats XML and evaluates XPath with namespaces.",
+    "https://github.com/theluckystrike/xml-xpath-tools-vscode"
   ]
 ];
 
@@ -309,7 +492,7 @@ const PAIRS = [
   ["zovo.zovo-json-tree-viewer", "zovo.video-preview-with-sound", 0.021],
   ["zovo.audio-preview-vscode", "zovo.video-preview-with-sound", 0.12],
   ["zovo.arrow-avro-viewer", "zovo.table-viewer-vscode", 0.12],
-  ["zovo.zovo-pickle-viewer", "zovo.tensor-viewer", 0.12],
+  ["zovo.zovo-pickle-viewer", "zovo.tensor-viewer", 0.39],
   ["zovo.dicom-nifti-viewer", "zovo.tiff-viewer", 0.12],
   ["zovo.zovo-gcode-viewer", "zovo.3d-model-viewer", 0.12],
   ["zovo.dxf-viewer", "zovo.3d-model-viewer", 0.12],
@@ -323,19 +506,83 @@ const PAIRS = [
   ["zovo.arrow-avro-viewer", "zovo.sqlite-table-viewer", 0.06],
   ["zovo.arrow-avro-viewer", "zovo.zovo-pickle-viewer", 0.06],
   ["zovo.zovo-pickle-viewer", "zovo.table-viewer-vscode", 0.06],
-  ["zovo.zovo-pickle-viewer", "zovo.hdf5-netcdf-explorer", 0.06],
+  ["zovo.zovo-pickle-viewer", "zovo.hdf5-netcdf-explorer", 0.24],
   ["zovo.tiff-viewer", "zovo.hdf5-netcdf-explorer", 0.06],
   ["zovo.dicom-nifti-viewer", "zovo.hdf5-netcdf-explorer", 0.06],
   ["zovo.zovo-graphviz-preview", "zovo.zovo-json-tree-viewer", 0.06],
   ["zovo.zip-archive-explorer", "zovo.table-viewer-vscode", 0.06],
-  ["zovo.zovo-har-viewer", "zovo.zovo-json-tree-viewer", 0.06]
+  ["zovo.zovo-har-viewer", "zovo.zovo-json-tree-viewer", 0.06],
+  ["zovo.zovo-azure-storage-explorer", "zovo.zovo-s3-explorer", 0.3],
+  ["zovo.zovo-azure-storage-explorer", "zovo.table-viewer-vscode", 0.12],
+  ["zovo.zovo-azure-storage-explorer", "zovo.pdf-viewer-dark", 0.3],
+  ["zovo.zovo-azure-storage-explorer", "zovo.zovo-parquet-viewer", 0.3],
+  ["zovo.zovo-hex-viewer", "zovo.tensor-viewer", 0.41],
+  ["zovo.zovo-hex-viewer", "zovo.zip-archive-explorer", 0.38],
+  ["zovo.zovo-hex-viewer", "zovo.zovo-pcap-viewer", 0.31],
+  ["zovo.zovo-hex-viewer", "zovo.zovo-linker-map-viewer", 0.3],
+  ["zovo.zovo-hex-viewer", "zovo.zovo-vcd-waveform-viewer", 0.23],
+  ["zovo.zovo-hex-viewer", "zovo.sqlite-table-viewer", 0.03],
+  ["zovo.zovo-pcap-viewer", "zovo.zovo-har-viewer", 0.06],
+  ["zovo.zovo-linker-map-viewer", "zovo.zovo-run-cpp", 0.03],
+  ["zovo.zovo-linker-map-viewer", "zovo.zovo-vcd-waveform-viewer", 0.03],
+  ["zovo.mermaid-viewer", "zovo.zovo-graphviz-preview", 0.061],
+  ["zovo.mermaid-viewer", "zovo.zovo-svg-viewer", 0.04],
+  ["zovo.mermaid-viewer", "zovo.xmind-mind-map-viewer", 0.03],
+  ["zovo.zovo-graphviz-preview", "zovo.zovo-svg-viewer", 0.25],
+  ["zovo.zovo-sql-client", "zovo.sqlite-table-viewer", 0.034],
+  ["zovo.zovo-sql-client", "zovo.table-viewer-vscode", 0.03],
+  ["zovo.zovo-sql-client", "zovo.zovo-sql-formatter", 0.03],
+  ["zovo.zovo-sql-client", "zovo.zovo-redis-client", 0.24],
+  ["zovo.zovo-mongodb-client", "zovo.zovo-redis-client", 0.2],
+  ["zovo.zovo-mongodb-client", "zovo.zovo-json-tree-viewer", 0.03],
+  ["zovo.zovo-sql-client", "zovo.zovo-oracle-sqlserver-client", 0.01],
+  ["zovo.zovo-sql-client", "zovo.zovo-mongodb-client", 0.01],
+  ["zovo.zovo-oracle-sqlserver-client", "zovo.zovo-mongodb-client", 0.01],
+  ["zovo.zovo-parquet-viewer", "zovo.arrow-avro-viewer", 0.077],
+  ["zovo.zovo-parquet-viewer", "zovo.hdf5-netcdf-explorer", 0.014],
+  ["zovo.zovo-elf-pe-viewer", "zovo.zovo-hex-viewer", 0.03],
+  ["zovo.zovo-intel-hex-viewer", "zovo.zovo-hex-viewer", 0.03],
+  ["zovo.zovo-intel-hex-viewer", "zovo.zovo-elf-pe-viewer", 0.03],
+  ["zovo.zovo-jar-viewer", "zovo.zip-archive-explorer", 0.03],
+  ["zovo.zovo-apk-analyzer", "zovo.zovo-jar-viewer", 0.03],
+  ["zovo.zovo-apk-analyzer", "zovo.zip-archive-explorer", 0.03],
+  ["zovo.zovo-excel-compare", "zovo.table-viewer-vscode", 0.03],
+  ["zovo.zovo-excel-to-markdown", "zovo.table-viewer-vscode", 0.03],
+  ["zovo.zovo-folder-diff", "zovo.zovo-hex-viewer", 0.03],
+  ["zovo.zovo-docx-editor", "zovo.docx-viewer-vscode", 0.03],
+  ["zovo.zovo-docx-editor", "zovo.pdf-viewer-dark", 0.03],
+  ["zovo.zovo-dbml-viewer", "zovo.sqlite-table-viewer", 0.03],
+  ["zovo.zovo-dbml-viewer", "zovo.zovo-sql-client", 0.03],
+  ["zovo.zovo-dbml-viewer", "zovo.mermaid-viewer", 0.03],
+  ["zovo.zovo-convert-to-markdown", "zovo.docx-viewer-vscode", 0.03],
+  ["zovo.zovo-convert-to-markdown", "zovo.pdf-viewer-dark", 0.03],
+  ["zovo.zovo-convert-to-markdown", "zovo.pptx-slide-viewer", 0.03],
+  ["zovo.zovo-image-editor", "zovo.zovo-svg-viewer", 0.03],
+  ["zovo.zovo-image-editor", "zovo.tiff-viewer", 0.03],
+  ["zovo.zovo-edi-viewer", "zovo.zovo-json-tree-viewer", 0.03],
+  ["zovo.zovo-edi-viewer", "zovo.table-viewer-vscode", 0.03],
+  ["zovo.zovo-spss-stata-viewer", "zovo.table-viewer-vscode", 0.03],
+  ["zovo.zovo-spss-stata-viewer", "zovo.zovo-parquet-viewer", 0.03],
+  ["zovo.zovo-spss-stata-viewer", "zovo.arrow-avro-viewer", 0.03],
+  ["zovo.zovo-can-dbc-viewer", "zovo.zovo-hex-viewer", 0.03],
+  ["zovo.zovo-can-dbc-viewer", "zovo.zovo-vcd-waveform-viewer", 0.03]
 ];
 
 // Ids of the 3 to 5 extensions most related to this one (shared file types and users), best first.
 // Picked by monetize.py. The More free viewers list shows these first.
-const RELATED = ["zovo.zovo-har-viewer", "zovo.zovo-json-tree-viewer", "zovo.zip-archive-explorer", "zovo.zovo-hex-viewer", "zovo.zovo-jsonl-viewer"];
+const RELATED = ["zovo.pdf-viewer-dark", "zovo.table-viewer-vscode", "zovo.docx-viewer-vscode"];
 
 const PUBLISHER_URL = 'https://marketplace.visualstudio.com/publishers/zovo';
+
+// Zovo Pro (EXEC16, CONV3 fix 1): { getPro, payWithPayPal, tier, usd } when this extension has Zovo Pro, else null.
+// getPro and payWithPayPal are the license module's commands. The footer runs them instead of opening the general
+// Sponsors page; payWithPayPal is '' when this extension has no PayPal command, and the plain PayPal link stays.
+const PRO = {
+  "getPro": "shellFormatter.getPro",
+  "payWithPayPal": "shellFormatter.payWithPayPal",
+  "tier": "https://github.com/sponsors/theluckystrike/sponsorships?tier_id=679878",
+  "usd": 19
+};
 
 const SETTING = 'showSupportLinks';
 
@@ -358,10 +605,26 @@ function marketplaceUrl(id) {
   return `https://marketplace.visualstudio.com/items?itemName=${encodeURIComponent(id)}`;
 }
 
-/** The review tab of a listing. '' when the id is empty. */
-function reviewUrl(id) {
+// The store this editor installs from (same rule as rate.js storeFor): VS Code uses the Marketplace; Cursor,
+// Windsurf, VSCodium and other VS Code-based editors use Open VSX. registerSupport() sets it from vscode.env.
+let STORE = 'marketplace';
+function storeFor(env) {
+  const scheme = String((env && env.uriScheme) || '').toLowerCase();
+  const app = String((env && env.appName) || '').toLowerCase();
+  if (!scheme && !app) return 'marketplace';
+  if (/^vscode(-insiders|-exploration)?$/.test(scheme) || app.startsWith('visual studio code')) return 'marketplace';
+  return 'openvsx';
+}
+
+/** The review tab of a listing in the store of this editor (or `store`). '' when the id is empty. */
+function reviewUrl(id, store) {
   const x = String(id || '');
-  return x ? `${marketplaceUrl(x)}&ssr=false#review-details` : '';
+  if (!x) return '';
+  if ((store || STORE) === 'openvsx') {
+    const dot = x.indexOf('.');
+    return `https://open-vsx.org/extension/${encodeURIComponent(dot > 0 ? x.slice(0, dot) : x)}/${encodeURIComponent(dot > 0 ? x.slice(dot + 1) : '')}/reviews`;
+  }
+  return `${marketplaceUrl(x)}&ssr=false#review-details`;
 }
 
 /** How closely two products are used together. 0 when they are not a pair. */
@@ -438,11 +701,34 @@ function commandIds(prefix) {
 /** Commands a webview footer may run through command links (webview option enableCommandUris). */
 function commandUris(prefix) {
   const c = commandIds(prefix);
-  return [c.sponsor, c.more, 'workbench.action.openSettings'];
+  const pro = PRO ? [PRO.getPro, PRO.payWithPayPal].filter(Boolean) : [];
+  return [c.sponsor, c.more, ...pro, 'workbench.action.openSettings'];
+}
+
+/** The footer's money links: "Zovo Pro, USD 19" and PayPal in a Pro listing, Sponsor and PayPal in the others. */
+function moneyLinks(prefix) {
+  const c = commandIds(prefix);
+  const out = [];
+  if (PRO) {
+    // CARD2: footerHtml adds the surface argument (["footer"]) so a card checkout from this link is tagged _footer.
+    out.push({ label: `Zovo Pro, USD ${PRO.usd}`, href: `command:${PRO.getPro}`, title: `Zovo Pro: USD ${PRO.usd} once, for the Pro tools in every Zovo extension`, surface: 'footer' });
+    if (paypalUrl()) {
+      out.push(PRO.payWithPayPal
+        ? { label: 'PayPal', href: `command:${PRO.payWithPayPal}`, title: `Pay for Zovo Pro with PayPal (USD ${PRO.usd})` }
+        : { label: 'PayPal', href: paypalUrl(), title: 'Support the developer on PayPal' });
+    }
+  } else {
+    out.push({ label: 'Sponsor', href: `command:${c.sponsor}`, title: 'Open the GitHub Sponsors page' });
+    if (paypalUrl()) out.push({ label: 'PayPal', href: paypalUrl(), title: 'Support the developer on PayPal' });
+  }
+  return out;
 }
 
 const FOOTER_CSS = [
-  '.zovo-support{font-size:11px;line-height:16px;padding:2px 8px;color:var(--vscode-descriptionForeground);opacity:.8;white-space:nowrap}',
+  // CARD2 (CONV4: "Zovo Pro, USD" was cut at a 746 px editor): each link keeps its words together; the line breaks
+  // between links, so "Hide" (last) wraps first.
+  '.zovo-support{font-size:11px;line-height:16px;padding:2px 8px;color:var(--vscode-descriptionForeground);opacity:.8;white-space:normal}',
+  '.zovo-support a{white-space:nowrap}',
   '.zovo-support:hover,.zovo-support:focus-within{opacity:1}',
   '.zovo-support a{color:var(--vscode-textLink-foreground);text-decoration:none}',
   '.zovo-support a:hover,.zovo-support a:focus{text-decoration:underline}',
@@ -460,12 +746,12 @@ function footerHtml(prefix, show, extraClass) {
   const settingArg = encodeURIComponent(JSON.stringify([`${prefix}.${SETTING}`]));
   const cls = extraClass ? `zovo-support ${extraClass}` : 'zovo-support';
   const sep = '<span class="zovo-sep" aria-hidden="true">·</span>';
-  // Order: Rate · More free viewers · Sponsor · PayPal (only when set) · Hide. Rate comes first: ratings help people find the extension.
+  // Order: Rate · More free viewers · Zovo Pro, USD 19 (Pro listings) or Sponsor · PayPal (only when set) · Hide.
+  // Rate comes first: ratings help people find the extension.
   return `<div class="${cls}" id="zovo-support">`
-    + (reviewUrl(SELF_ID) ? `<a href="${reviewUrl(SELF_ID)}" title="Rate or review this extension on the Marketplace">Rate</a>` + sep : '')
+    + (reviewUrl(SELF_ID) ? `<a href="${reviewUrl(SELF_ID)}" title="Rate or review this extension on ${STORE === 'openvsx' ? 'Open VSX' : 'the Marketplace'}">Rate</a>` + sep : '')
     + `<a href="command:${c.more}" title="Other free extensions by Zovo">More free viewers</a>` + sep
-    + `<a href="command:${c.sponsor}" title="Open the GitHub Sponsors page">Sponsor</a>` + sep
-    + (paypalUrl() ? `<a href="${paypalUrl()}" title="Support the developer on PayPal">PayPal</a>` + sep : '')
+    + moneyLinks(prefix).map((l) => `<a href="${l.href}${l.surface ? '?' + encodeURIComponent(JSON.stringify([l.surface])) : ''}" title="${l.title}">${l.label}</a>` + sep).join('')
     + `<a href="command:workbench.action.openSettings?${settingArg}" title="Hide these links">Hide</a>`
     + '</div>';
 }
@@ -474,8 +760,8 @@ function footerHtml(prefix, show, extraClass) {
 function footerMarkdown(prefix) {
   const c = commandIds(prefix);
   const rate = reviewUrl(SELF_ID);
-  const pp = paypalUrl();
-  return (rate ? `[Rate](${rate}) · ` : '') + `[More free viewers](command:${c.more})` + ` · [Sponsor](command:${c.sponsor})` + (pp ? ` · [PayPal](${pp})` : '');
+  return (rate ? `[Rate](${rate}) · ` : '') + `[More free viewers](command:${c.more})`
+    + moneyLinks(prefix).map((l) => ` · [${l.label}](${l.href})`).join('');
 }
 
 function showLinks(vscode, prefix) {
@@ -492,18 +778,21 @@ function showLinks(vscode, prefix) {
  */
 function registerSupport(opts) {
   const { vscode, context, prefix, selfId } = opts;
+  try { STORE = storeFor(vscode.env); } catch { STORE = 'marketplace'; }
   const c = commandIds(prefix);
   const open = (url) => vscode.env.openExternal(vscode.Uri.parse(url));
 
   async function supportDeveloper() {
     const links = fundingLinks();
-    if (links.length === 0) return;
-    if (links.length === 1) { await open(links[0].url); return; }
-    const pick = await vscode.window.showQuickPick(
-      links.map((l) => ({ label: l.label, detail: l.url, link: l })),
-      { placeHolder: 'Pick a way to support the developer' }
-    );
-    if (pick) await open(pick.link.url);
+    // A Pro listing shows Zovo Pro first (CONV3 fix 1), then GitHub Sponsors and PayPal.
+    const rows = (PRO ? [{ label: `Zovo Pro: USD ${PRO.usd} once, unlocks the Pro tools in all Zovo extensions`, command: PRO.getPro }] : [])
+      .concat(links.map((l) => ({ label: l.label, detail: l.url, link: l })));
+    if (rows.length === 0) return;
+    if (rows.length === 1 && rows[0].link) { await open(rows[0].link.url); return; }
+    const pick = await vscode.window.showQuickPick(rows, { placeHolder: 'Pick a way to support the developer' });
+    if (!pick) return;
+    if (pick.command) { await vscode.commands.executeCommand(pick.command, 'support'); return; } // CARD2 surface tag
+    await open(pick.link.url);
   }
 
   async function moreViewers() {
@@ -533,8 +822,8 @@ function registerSupport(opts) {
 }
 
 module.exports = {
-  FUNDING, GITHUB_PROFILE, SELF_ID, LIVE, QUEUED, PAIRS, RELATED, PUBLISHER_URL, SETTING, FOOTER_CSS,
-  fundingLinks, sponsorUrl, paypalUrl, marketplaceUrl, reviewUrl, pairWeight, otherProducts, relatedProducts, pickItems,
+  FUNDING, GITHUB_PROFILE, SELF_ID, LIVE, QUEUED, PAIRS, RELATED, PUBLISHER_URL, SETTING, FOOTER_CSS, PRO, moneyLinks,
+  fundingLinks, sponsorUrl, paypalUrl, marketplaceUrl, reviewUrl, storeFor, pairWeight, otherProducts, relatedProducts, pickItems,
   commandIds, commandUris,
   footerHtml, footerMarkdown, showLinks, registerSupport,
 };

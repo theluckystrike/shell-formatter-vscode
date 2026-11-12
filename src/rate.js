@@ -1,15 +1,20 @@
 'use strict';
-// Shared Zovo rating ask, v2.1 (factory/sprint/rating/rate.js, copied to src/rate.js in each extension).
+// Shared Zovo rating ask, v2.3 (factory/sprint/rating/rate.js, copied to src/rate.js in each extension).
 // No network and no telemetry. State lives only in context.globalState. The one outbound action is the
-// Marketplace review page, opened by the user's own click on "Rate it".
+// review page of the store the editor installs from (VS Code: Marketplace; Cursor, Windsurf, VSCodium and other
+// Open VSX editors: Open VSX), opened by the user's own click on "Rate it".
 //
 // Rules:
-// - Ask only after the user opened 2 files without an error, in 2 window sessions that started at least 4 hours
-//   apart. A session starts at its first file opened without an error.
+// - v2.3: ask at the 2nd file opened without an error that opens 30 minutes or more after the first good file
+//   (in any window; v2.2 wanted 2 window sessions 4 hours apart, which most users never reach in their first days).
+// - v2.3: never in the first 2 minutes of a window: no ask on open, on restored tabs, or at the file that opened it.
 // - Show the ask 3 seconds after that success, not while the file renders, and only if the rules still hold then.
 // - Files from the extension's own folder or storage (walkthrough samples) do not count.
-// - "Rate it" opens the review page and ends it. "No thanks" ends it.
+// - "Rate it" opens the review page of the store this editor uses and ends it. "No thanks" ends it.
 // - "Later" (or closing the message) asks again one time, 7 days later at the earliest.
+// - v2.3: an ask nobody answered (VS Code hides the message into the bell after about 10 seconds; the window was
+//   closed with it there) may come back one time, 1 day later at the earliest.
+// - v2.3: openReview() (the "Rate" footer link or a "Rate" row in a quick pick) ends it too: no ask after that.
 // - At most 2 asks in all, at most 1 per window session, only while the window has focus.
 // - Never after an error: no ask in a session where a file failed to open, and none for 24 hours after a failure.
 // - The setting <section>.askForRating = false turns it off.
@@ -17,11 +22,14 @@
 
 const STATE_KEY = 'zovo.rating.v2'; // v2.1 keeps the v2 key and reads v2 states in place
 const OLD_KEY = 'zovo.rating.v1';
-const RULES = '2.1';
+const RULES = '2.3';
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 const MIN_FILES = 2; // files opened without an error before the first ask
-const MIN_GAP_MS = 4 * HOUR_MS; // the first and the last session with a success must start this far apart
+const MIN_GAP_MS = 4 * HOUR_MS; // a window open this long starts a new session (v2.2 bookkeeping, kept)
+const MIN_SPAN_MS = 30 * 60 * 1000; // v2.3: the asking file opens at least this long after the first good file
+const WARMUP_MS = 2 * 60 * 1000; // v2.3: no ask in the first 2 minutes after a window's first good file
+const RETRY_DAYS = 1; // v2.3: an ask with no answer may come back after this many days
 const MAX_SESSIONS = 8; // session start times kept (the first one and the newest ones)
 const ASK_DELAY_MS = 3000; // wait after the success, so the file is on screen before the question
 const LATER_DAYS = 7; // "Later" waits this long
@@ -30,9 +38,12 @@ const ERROR_QUIET_MS = DAY_MS; // no ask for this long after a failure
 const RATE = 'Rate it';
 const LATER = 'Later';
 const NEVER = 'No thanks';
+const RATED = 'rated'; // v2.3: the user opened the review page from a footer link or a quick pick row
 // Fake clock for manual and VS Code tests: shifts "now" by these many days and hours. Unset in normal use.
 const CLOCK_ENV = 'ZOVO_RATING_CLOCK_OFFSET_DAYS';
 const CLOCK_ENV_HOURS = 'ZOVO_RATING_CLOCK_OFFSET_HOURS';
+const MARKETPLACE = 'marketplace';
+const OPENVSX = 'openvsx';
 
 function freshState() {
   return { rules: RULES, count: 0, sessions: [], asks: 0, nextAskAt: 0, lastErrorAt: 0, done: false };
@@ -99,6 +110,12 @@ function spreadMs(state) {
   return t.length < 2 ? 0 : t[t.length - 1] - t[0];
 }
 
+/** Time from the first good file (the first session start) to now. 0 without a first file. */
+function usedForMs(state, now) {
+  const t = normalize(state).sessions;
+  return t.length && num(now, 0) > t[0] ? num(now, 0) - t[0] : 0;
+}
+
 /** A file opened without an error. sessionStart: when this window session had its first success (default now). */
 function recordSuccess(state, now, sessionStart) {
   const s = normalize(state);
@@ -117,36 +134,69 @@ function recordFailure(state, now) {
 
 /**
  * Should the ask show now? Call it right after recordSuccess, and again just before showing.
- * env: { now, enabled, focused, askedThisSession, errorThisSession }
+ * env: { now, enabled, focused, askedThisSession, errorThisSession, windowAgeMs? (time since this window's first good file) }
  */
 function decide(state, env) {
   const s = normalize(state);
   if (s.done || !env.enabled) return false;
   if (env.askedThisSession || env.errorThisSession || env.focused === false) return false;
   if (s.asks >= MAX_ASKS) return false;
-  if (s.count < MIN_FILES || spreadMs(s) < MIN_GAP_MS) return false;
+  if (s.count < MIN_FILES || usedForMs(s, env.now) < MIN_SPAN_MS) return false;
+  if (typeof env.windowAgeMs === 'number' && env.windowAgeMs < WARMUP_MS) return false;
   if (s.lastErrorAt && env.now - s.lastErrorAt < ERROR_QUIET_MS) return false;
   return env.now >= s.nextAskAt;
 }
 
 /**
  * Apply an answer. 'shown' is saved before the message opens, so an ask is used up even if VS Code
- * quits with the message open. "Rate it" and "No thanks" end it; "Later" or no answer wait 7 days.
+ * quits with the message open; with no answer at all it may come back after 1 day (v2.3). "Rate it",
+ * "No thanks" and 'rated' (review page opened from a footer link or a pick row) end it; "Later" or closing
+ * the message wait 7 days.
  */
 function recordAnswer(state, answer, now) {
   const s = normalize(state);
   if (answer === 'shown') {
     s.asks += 1;
-    s.nextAskAt = num(now, 0) + LATER_DAYS * DAY_MS;
-  } else if (answer === RATE || answer === NEVER) {
+    s.nextAskAt = num(now, 0) + RETRY_DAYS * DAY_MS;
+  } else if (answer === RATE || answer === NEVER || answer === RATED) {
     s.done = true;
+  } else {
+    s.nextAskAt = Math.max(s.nextAskAt, num(now, 0) + LATER_DAYS * DAY_MS);
   }
   if (s.asks >= MAX_ASKS) s.done = true;
   return s;
 }
 
-function reviewUrl(extensionId) {
-  return `https://marketplace.visualstudio.com/items?itemName=${encodeURIComponent(extensionId)}&ssr=false#review-details`;
+/**
+ * The store this editor installs extensions from, read from vscode.env: 'marketplace' for VS Code (desktop, web,
+ * Insiders, Codespaces), 'openvsx' for the other VS Code-based editors (Cursor, Windsurf, VSCodium, Trae, Kiro,
+ * Positron, code-server, Gitpod). They install from Open VSX, and their users have no reason to sign in to the
+ * Microsoft Marketplace. Unknown or missing values keep the Marketplace.
+ */
+function storeFor(env) {
+  const scheme = String((env && env.uriScheme) || '').toLowerCase();
+  const app = String((env && env.appName) || '').toLowerCase();
+  if (!scheme && !app) return MARKETPLACE;
+  if (/^vscode(-insiders|-exploration)?$/.test(scheme)) return MARKETPLACE;
+  if (app.startsWith('visual studio code')) return MARKETPLACE;
+  return OPENVSX;
+}
+
+/** The review page of an extension: the Marketplace review tab, or the Open VSX reviews tab. */
+function reviewUrl(extensionId, store) {
+  const id = String(extensionId || '');
+  if (store === OPENVSX) {
+    const dot = id.indexOf('.');
+    const ns = dot > 0 ? id.slice(0, dot) : id;
+    const name = dot > 0 ? id.slice(dot + 1) : '';
+    return `https://open-vsx.org/extension/${encodeURIComponent(ns)}/${encodeURIComponent(name)}/reviews`;
+  }
+  return `https://marketplace.visualstudio.com/items?itemName=${encodeURIComponent(id)}&ssr=false#review-details`;
+}
+
+/** Short name of the store, for the "Rate" quick pick row. */
+function storeLabel(store) {
+  return store === OPENVSX ? 'Open VSX' : 'Marketplace';
 }
 
 function messageFor(name) {
@@ -194,9 +244,12 @@ function isSampleFile(target, roots) {
 
 /**
  * opts: { vscode, context, extensionId, section, name, now?, delayMs? }
- * Returns { success(target?), failure() }. Call success(document.uri) once per file that opened without an
- * error, failure() when a file could not be opened. Both never throw. success() without a target counts the
- * file (as in v2), so pass the uri to keep walkthrough samples out.
+ * Returns { success(target?), failure(), openReview(), pickItem(), reviewUrl }. Call success(document.uri) once per
+ * file that opened without an error, failure() when a file could not be opened. success() without a target counts
+ * the file (as in v2), so pass the uri to keep walkthrough samples out.
+ * v2.3, optional: openReview() opens the review page and ends the ask (wire it to a "Rate" footer link or quick pick
+ * row); pickItem() is that row ({ label, description, zovoRate: true }); reviewUrl is the page for this editor.
+ * None of them throws.
  */
 function createRatingPrompt(opts) {
   const { vscode, context, extensionId, section, name } = opts;
@@ -207,9 +260,11 @@ function createRatingPrompt(opts) {
   const usable = !!(store && typeof store.get === 'function' && typeof store.update === 'function');
   const safe = (fn, d) => { try { return fn(); } catch { return d; } };
   const roots = safe(() => sampleRoots(context), []);
+  const reviewStore = safe(() => storeFor(vscode.env), MARKETPLACE);
   let askedThisSession = false;
   let errorThisSession = false;
   let sessionStart = 0;
+  let windowStart = 0; // v2.3: this window's first good file
   let busy = false;
 
   function load() {
@@ -225,6 +280,7 @@ function createRatingPrompt(opts) {
     askedThisSession,
     errorThisSession,
   });
+  const envAt = () => { const e = env(); e.windowAgeMs = windowStart ? Math.max(0, e.now - windowStart) : 0; return e; };
 
   async function ask(s, e) {
     askedThisSession = true;
@@ -233,13 +289,19 @@ function createRatingPrompt(opts) {
     const pick = await vscode.window.showInformationMessage(messageFor(name), RATE, LATER, NEVER);
     st = recordAnswer(load(), pick, now());
     await store.update(STATE_KEY, st);
-    if (pick === RATE) await vscode.env.openExternal(vscode.Uri.parse(reviewUrl(extensionId)));
+    if (pick === RATE) await vscode.env.openExternal(vscode.Uri.parse(reviewUrl(extensionId, reviewStore)));
   }
 
   async function success(target) {
     if (!usable || isSampleFile(target, roots)) return;
-    const e = env();
-    if (!sessionStart) sessionStart = e.now;
+    if (!windowStart) windowStart = now();
+    const e = envAt();
+    // A window that stays open for days is still used on several occasions: its first good file 4 hours or more
+    // after the current session started begins a new session (and a failure from the earlier one no longer blocks).
+    if (!sessionStart || e.now - sessionStart >= MIN_GAP_MS) {
+      if (sessionStart) errorThisSession = false;
+      sessionStart = e.now;
+    }
     const s = recordSuccess(load(), e.now, sessionStart);
     await store.update(STATE_KEY, s);
     if (busy || !decide(s, e)) return;
@@ -247,7 +309,7 @@ function createRatingPrompt(opts) {
     try {
       // Let the file render first. A failure, a lost focus or another ask in the meantime cancels it.
       if (delayMs > 0) await new Promise((r) => setTimeout(r, delayMs));
-      const e2 = env();
+      const e2 = envAt();
       const s2 = load();
       if (decide(s2, e2)) await ask(s2, e2);
     } finally { busy = false; }
@@ -259,15 +321,28 @@ function createRatingPrompt(opts) {
     await store.update(STATE_KEY, recordFailure(load(), now()));
   }
 
+  const url = safe(() => reviewUrl(extensionId, reviewStore), '');
+
+  async function openReview() {
+    if (!url) return;
+    if (usable) await store.update(STATE_KEY, recordAnswer(load(), RATED, now()));
+    await vscode.env.openExternal(vscode.Uri.parse(url));
+  }
+
   return {
     success: (target) => success(target).catch(() => {}),
     failure: () => failure().catch(() => {}),
+    openReview: () => openReview().catch(() => {}),
+    pickItem: () => ({ label: `$(star) Rate ${name}`, description: `opens the ${storeLabel(reviewStore)} review page`, zovoRate: true }),
+    reviewUrl: url,
   };
 }
 
 module.exports = {
   createRatingPrompt, decide, recordSuccess, recordFailure, recordAnswer, normalize, freshState, fromV1,
-  spreadMs, cleanSessions, dayKey, dayEnd, reviewUrl, messageFor, clockOffsetMs, isSampleFile, sampleRoots, targetPath,
-  STATE_KEY, OLD_KEY, RULES, HOUR_MS, DAY_MS, MIN_FILES, MIN_GAP_MS, MAX_SESSIONS, ASK_DELAY_MS, LATER_DAYS, MAX_ASKS,
-  ERROR_QUIET_MS, RATE, LATER, NEVER, CLOCK_ENV, CLOCK_ENV_HOURS,
+  spreadMs, usedForMs, cleanSessions, dayKey, dayEnd, reviewUrl, storeFor, storeLabel, messageFor, clockOffsetMs, isSampleFile,
+  sampleRoots, targetPath,
+  STATE_KEY, OLD_KEY, RULES, HOUR_MS, DAY_MS, MIN_FILES, MIN_GAP_MS, MIN_SPAN_MS, WARMUP_MS, RETRY_DAYS, MAX_SESSIONS,
+  ASK_DELAY_MS, LATER_DAYS, MAX_ASKS, ERROR_QUIET_MS, RATE, LATER, NEVER, RATED, CLOCK_ENV, CLOCK_ENV_HOURS, MARKETPLACE,
+  OPENVSX,
 };

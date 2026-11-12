@@ -39,3 +39,12 @@ test('sizes', () => {
   assert.equal(E.fmtSize(512), '512 B');
   assert.equal(E.fmtSize(12 * 1024 * 1024), '12.0 MB');
 });
+
+test('guessIndent: tabs, 2 or 4 spaces from the file, defaults when nothing is indented', () => {
+  const { guessIndent } = require('../src/edits');
+  const d = { insertSpaces: true, tabSize: 4 };
+  assert.deepEqual(guessIndent('if x; then\n\techo\nfi\n', d), { insertSpaces: false, tabSize: 4 });
+  assert.deepEqual(guessIndent('if x; then\n  echo\n  if y; then\n    z\n  fi\nfi\n', d), { insertSpaces: true, tabSize: 2 });
+  assert.deepEqual(guessIndent('f() {\n    a\n    b\n}\n', d), { insertSpaces: true, tabSize: 4 });
+  assert.deepEqual(guessIndent('echo a\necho b\n', { insertSpaces: false, tabSize: 8 }), { insertSpaces: false, tabSize: 8 });
+});

@@ -6,9 +6,13 @@ const path = require('path');
 const fsp = require('fs/promises');
 const { Engine, SHFMT_VERSION } = require('./engine');
 const { resolveOptions, editorConfigProps, shfmtFlags } = require('./options');
-const { lineDiff, byteColToChar, dedentSelection, indentBack, hasNul, fmtSize } = require('./edits');
+const { lineDiff, byteColToChar, dedentSelection, indentBack, hasNul, fmtSize, guessIndent } = require('./edits');
 const { createRatingPrompt } = require('./rate');
 const { registerSupport, footerMarkdown, showLinks } = require('./support');
+const { createPro } = require('./pro');
+const { createProTools } = require('./protools');
+const { createReach } = require('./reach');
+const reachConfig = require('./reach-config');
 
 const SECTION = 'shellFormatter';
 const SELF_ID = 'zovo.zovo-shell-formatter';
@@ -298,6 +302,9 @@ async function menu(support) {
     { label: '$(star) Use Shell Formatter as the default for shell scripts', run: setDefaultFormatter },
     { label: '$(save) Format each time a shell script is saved', run: formatOnSave },
     { label: '$(terminal) Copy the matching shfmt command (for CI)', run: copyCommand },
+    { label: '$(files) Format all shell scripts in a folder (Zovo Pro)', run: () => vscode.commands.executeCommand(`${SECTION}.formatFolder`) },
+    { label: '$(diff) Formatting check with a patch file (Zovo Pro)', run: () => vscode.commands.executeCommand(`${SECTION}.checkFolder`) },
+    { label: '$(fold) Minify this script to a copy (Zovo Pro)', run: () => vscode.commands.executeCommand(`${SECTION}.minifyCopy`) },
     { label: '$(gear) Settings', run: () => vscode.commands.executeCommand('workbench.action.openSettings', SECTION) },
     { label: '$(book) Get started', run: () => vscode.commands.executeCommand(`${SECTION}.openWalkthrough`) },
     { label: '$(extensions) More free tools by Zovo', run: () => support.moreViewers() },
@@ -305,6 +312,56 @@ async function menu(support) {
   ];
   const pick = await vscode.window.showQuickPick(items, { placeHolder: `Shell Formatter · ${engineVersionText()} · no download, works offline` });
   if (pick) await pick.run();
+}
+
+/**
+ * Formats a script's text the same way as Format Document (settings, .editorconfig, dialect, same-commands check),
+ * without an editor. For the Zovo Pro tools. extra.minify: shfmt -mn (the minify tool).
+ * Returns the engine result ({ ok, text, verified, ... }) with dialect, or { ok: false, kind: 'skip', message }.
+ */
+async function formatText(uri, raw, extra = {}) {
+  const s = settings(uri);
+  if (skippedByName(uri, s)) return { ok: false, kind: 'skip', message: 'its name is in the shellFormatter.skipFiles setting' };
+  const size = Buffer.byteLength(raw, 'utf8');
+  if (size > s.maxFileMB * 1024 * 1024) return { ok: false, kind: 'skip', message: `larger than ${s.maxFileMB} MB (shellFormatter.maxFileMB)` };
+  if (hasNul(raw)) return { ok: false, kind: 'skip', message: 'the file has binary (NUL) bytes' };
+  const text = raw.replace(/\r\n/g, '\n');
+  const firstLine = text.split('\n', 1)[0];
+  const ed = vscode.workspace.getConfiguration('editor', { uri, languageId: 'shellscript' });
+  const defaults = { insertSpaces: ed.get('insertSpaces', true) !== false, tabSize: Number(ed.get('tabSize', 4)) || 4 };
+  // An open editor would use its detected indentation; a file on disk gets the same guess (editor.detectIndentation).
+  const editor = ed.get('detectIndentation', true) ? guessIndent(text, defaults) : defaults;
+  const guess = resolveOptions({ fileName: uri.path, firstLine, settings: Object.assign({}, s, { useEditorConfig: false }) });
+  const ec = s.useEditorConfig ? editorConfigProps(await readEditorConfigs(uri), uri.path, guess.dialect || 'bash') : {};
+  const r = resolveOptions({ fileName: uri.path, firstLine, settings: s, editor, ec });
+  if (r.skip) return { ok: false, kind: 'skip', message: r.skip };
+  // Minify runs in two steps: shfmt's simplify (-s) first, then the minified print of that text, which must parse to
+  // the same commands (the same-commands check, up to its size limit). shfmt -mn simplifies too, so a direct check
+  // against the original would always differ where -s removed quotes or $ signs.
+  const opts = extra.minify ? Object.assign({}, r.opts, { minify: false, simplify: true }) : r.opts;
+  const verify = !extra.minify && s.verify && !opts.simplify && !opts.minify && size <= VERIFY_MAX;
+  const name = path.posix.basename(uri.path);
+  let dialect = r.dialect;
+  let variant = opts.variant;
+  let res = await engine.format(text, opts, name, verify, s.timeoutSeconds * 1000);
+  if (!res.ok && res.kind === 'syntax' && (r.dialectFrom === 'default' || r.dialectFrom === 'name') && s.dialect === 'auto' && !ec.shell_variant) {
+    const alt = featureDialect(res.message);
+    const variants = { bash: 1, mksh: 4, zsh: 16 };
+    if (alt && alt !== dialect) {
+      const res2 = await engine.format(text, Object.assign({}, opts, { variant: variants[alt] }), name, verify, s.timeoutSeconds * 1000);
+      if (res2.ok) { res = res2; dialect = alt; variant = variants[alt]; }
+    }
+  }
+  if (res.ok && extra.minify) {
+    res = await engine.format(res.text, Object.assign({}, opts, { variant, minify: true, simplify: true }), name, size <= VERIFY_MAX, s.timeoutSeconds * 1000);
+  }
+  requests++;
+  if (size > RECYCLE_AT || requests % 500 === 0) engine.reset();
+  if (res.ok && extra.minify) {
+    // shfmt -mn keeps the "#!" line today; if a script's first line ever goes missing, put it back so the copy still runs.
+    if (/^#!/.test(firstLine) && !res.text.startsWith('#!')) res = Object.assign({}, res, { text: firstLine + '\n' + res.text });
+  }
+  return Object.assign({ dialect, flags: shfmtFlags(dialect, extra.minify ? Object.assign({}, opts, { minify: true }) : opts).filter((f) => !f.startsWith('-ln=')).join(' ') }, res);
 }
 
 function activate(context) {
@@ -326,7 +383,23 @@ function activate(context) {
     },
   };
 
+  // Zovo Pro: Format all shell scripts in a folder, Formatting check with a patch file, Minify a script to a copy
+  // (src/protools.js). Nothing about Pro shows until one of them is clicked.
+  const pro = createPro({ vscode, context, prefix: SECTION });
+  const proTools = createProTools({ vscode, pro, formatText });
+  // REACH1: no viewer or webview here (formatting edits the file, the report and the patch open as untitled files), so
+  // no toolbar row. Explorer entries "Zovo Pro: <tool>" run the tools on the clicked folder or script, tagged ctx.
+  const reach = createReach({ vscode, context, ...reachConfig, licensed: () => pro.licensed });
+  reach.registerCtx();
+  const proCmd = (fn) => async (arg) => {
+    try { await fn(arg); } catch (e) { vscode.window.showErrorMessage(`Shell Formatter: ${e && e.message ? e.message : String(e)}`); }
+  };
+
   context.subscriptions.push(
+    vscode.commands.registerCommand(`${SECTION}.formatFolder`, reach.wrap(proCmd((arg) => proTools.formatFolder(arg)))),
+    vscode.commands.registerCommand(`${SECTION}.checkFolder`, reach.wrap(proCmd((arg) => proTools.checkFolder(arg)))),
+    vscode.commands.registerCommand(`${SECTION}.minifyCopy`, reach.wrap(proCmd((arg) => proTools.minifyCopy(arg)))),
+    vscode.window.registerUriHandler({ handleUri: (uri) => pro.handleUri(uri) }),
     { dispose: () => engine && engine.dispose() },
     diagnostics,
     status,
@@ -355,4 +428,4 @@ function deactivate() {
   if (engine) engine.dispose();
 }
 
-module.exports = { activate, deactivate, SHFMT_VERSION, featureDialect, globToRe };
+module.exports = { activate, deactivate, SHFMT_VERSION, featureDialect, globToRe, formatText };

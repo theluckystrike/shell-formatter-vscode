@@ -1,5 +1,5 @@
 'use strict';
-// Tests for the shared rating ask v2.1 (factory/sprint/rating). Copied unchanged into each extension's test/.
+// Tests for the shared rating ask v2.3 (factory/sprint/rating). Copied unchanged into each extension's test/.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -9,6 +9,7 @@ const R = require('../src/rate.js');
 const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
 const DAY = R.DAY_MS;
 const HOUR = R.HOUR_MS;
+const MIN = 60 * 1000;
 const at = (d, h, m = 0) => new Date(2026, 10, d, h, m, 0).getTime(); // local time, November 2026
 const T0 = at(2, 10); // local 10:00
 const env = (over = {}) => ({ now: T0 + DAY, enabled: true, focused: true, askedThisSession: false, errorThisSession: false, ...over });
@@ -27,7 +28,7 @@ test('rating: message and buttons', () => {
   assert.deepEqual([R.RATE, R.LATER, R.NEVER], ['Rate it', 'Later', 'No thanks']);
 });
 
-test('rating: v2.1 constants', () => {
+test('rating: v2.1 constants (v2.2 keeps them)', () => {
   assert.equal(R.MIN_FILES, 2);
   assert.equal(R.MIN_GAP_MS, 4 * HOUR);
   assert.equal(R.ASK_DELAY_MS, 3000);
@@ -44,13 +45,14 @@ test('rating: 2 files in 2 sessions 4 hours apart ask; 1 file does not', () => {
   assert.equal(ready().sessions.length, 2);
 });
 
-test('rating: no ask while all files were opened in one session', () => {
-  const s = opens(50, T0 + 10 * HOUR, undefined, T0); // one long session: 10 hours of use, 50 files
-  assert.equal(s.sessions.length, 1);
-  assert.equal(R.decide(s, env({ now: T0 + 10 * HOUR })), false);
-  assert.equal(R.decide(s, env({ now: T0 + 5 * DAY })), false, 'time alone does not count, a second session does');
-  const s2 = opens(1, T0 + 5 * DAY, s);
-  assert.equal(R.decide(s2, env({ now: T0 + 5 * DAY })), true);
+test('rating v2.3: the 2nd good file 30 minutes or more after the first one asks, in any session', () => {
+  assert.equal(R.decide(opens(1), env({ now: T0 })), false, '1 file');
+  const quick = opens(5, T0 + 29 * MIN, undefined, T0); // 5 files in the first 29 minutes, one window
+  assert.equal(R.decide(quick, env({ now: T0 + 29 * MIN })), false, 'all within 29 minutes');
+  const s = opens(1, T0 + 30 * MIN, opens(1), T0); // the same window, 30 minutes later
+  assert.equal(s.sessions.length, 1, 'one session');
+  assert.equal(R.decide(s, env({ now: T0 + 30 * MIN })), true, '30 minutes later, same window');
+  assert.equal(R.decide(opens(1, T0 + 5 * DAY), env({ now: T0 + 5 * DAY })), false, 'time alone does not count: 1 file');
 });
 
 test('rating clock: 23:50 and 00:10 (2 calendar days, 20 minutes) do not pass', () => {
@@ -69,21 +71,20 @@ test('rating clock: 09:00 and 15:00 on one day pass', () => {
   assert.equal(R.decide(s, env({ now: at(4, 15) })), true);
 });
 
-test('rating clock: the gap is 4 hours, to the minute', () => {
+test('rating clock v2.3: the span is 30 minutes, to the minute', () => {
   const a = at(5, 8);
-  assert.equal(R.decide(opens(1, a + 4 * HOUR - 60000, opens(1, a)), env({ now: a + 4 * HOUR - 60000 })), false, '3 h 59 min');
-  assert.equal(R.decide(opens(1, a + 4 * HOUR, opens(1, a)), env({ now: a + 4 * HOUR })), true, '4 h 00 min');
+  assert.equal(R.decide(opens(1, a + 29 * MIN, opens(1, a), a), env({ now: a + 29 * MIN })), false, '29 min');
+  assert.equal(R.decide(opens(1, a + 30 * MIN, opens(1, a), a), env({ now: a + 30 * MIN })), true, '30 min');
 });
 
-test('rating clock: the gap is between session starts, not between files', () => {
-  // Session 1 starts 09:00 and stays open; a file at 14:00 in it does not make a second session.
-  const s = opens(1, at(6, 14), opens(1, at(6, 9)), at(6, 9));
-  assert.equal(s.sessions.length, 1);
-  assert.equal(R.decide(s, env({ now: at(6, 14) })), false);
-  // A new session at 11:00 (2 h after 09:00) with 3 files: no. A session at 13:00: yes.
-  const s2 = opens(3, at(6, 11), s);
-  assert.equal(R.decide(s2, env({ now: at(6, 11) })), false);
-  assert.equal(R.decide(opens(1, at(6, 13), s2), env({ now: at(6, 13) })), true);
+test('rating v2.3: the span counts from the first good file ever; a window waits 2 minutes', () => {
+  const s = opens(1, at(6, 9, 40), opens(1, at(6, 9))); // 09:00, then a new window at 09:40
+  assert.equal(R.decide(s, env({ now: at(6, 9, 40) })), true, 'the rule alone');
+  assert.equal(R.decide(s, env({ now: at(6, 9, 40), windowAgeMs: 0 })), false, 'the file that opened the window');
+  assert.equal(R.decide(s, env({ now: at(6, 9, 41) + 59 * 1000, windowAgeMs: 119 * 1000 })), false, '1 min 59 s into the window');
+  assert.equal(R.decide(s, env({ now: at(6, 9, 42), windowAgeMs: 2 * MIN })), true, '2 minutes into the window');
+  assert.equal(R.usedForMs(s, at(6, 9, 40)), 40 * MIN);
+  assert.equal(R.usedForMs(undefined, T0), 0);
 });
 
 test('rating: session list stays short and keeps the first session', () => {
@@ -189,12 +190,23 @@ test('migration: a v2 user who said "No thanks" or was asked twice is never aske
   }
 });
 
-test('migration: v2 days give no credit for use less than 4 hours ago', () => {
-  // v2 saw a file on 2026-11-02 (maybe at 23:50). A session at 00:10 or 03:59 on 11-03 does not pass, 04:00 does.
+test('migration: v2 days count from the end of the newest v2 day', () => {
+  // v2 saw a file on 2026-11-02 (maybe at 23:50). A file at 00:10 or 00:29 on 11-03 does not pass, 00:31 does.
   const v2 = { count: 3, days: ['2026-11-02'], asks: 0, done: false };
   assert.equal(R.decide(opens(1, at(3, 0, 10), v2), env({ now: at(3, 0, 10) })), false);
-  assert.equal(R.decide(opens(1, at(3, 3, 59), v2), env({ now: at(3, 3, 59) })), false);
-  assert.equal(R.decide(opens(1, at(3, 4, 0), v2), env({ now: at(3, 4, 0) })), true);
+  assert.equal(R.decide(opens(1, at(3, 0, 29), v2), env({ now: at(3, 0, 29) })), false);
+  assert.equal(R.decide(opens(1, at(3, 0, 31), v2), env({ now: at(3, 0, 31) })), true);
+});
+
+test('migration: a v2.2 state keeps its sessions, asks and answers', () => {
+  const v22 = { rules: '2.2', count: 4, sessions: [T0, T0 + 6 * HOUR], asks: 1, nextAskAt: T0 + 8 * DAY, lastErrorAt: 0, done: false };
+  const s = R.normalize(v22);
+  assert.deepEqual(s.sessions, v22.sessions);
+  assert.equal(s.asks, 1);
+  assert.equal(s.nextAskAt, T0 + 8 * DAY, 'a v2.2 "Later" still waits its 7 days');
+  assert.equal(s.rules, '2.3');
+  assert.equal(R.decide(opens(1, T0 + 7 * DAY, s), env({ now: T0 + 7 * DAY })), false);
+  assert.equal(R.decide(opens(1, T0 + 8 * DAY, s), env({ now: T0 + 8 * DAY })), true);
 });
 
 test('migration: v1 state keeps its answers', () => {
@@ -238,9 +250,26 @@ test('rating: fake clock only from the env variables, bounded', () => {
   assert.equal(R.clockOffsetMs({ [R.CLOCK_ENV_HOURS]: '100000' }), 0);
 });
 
-test('rating: review link points at this extension', () => {
+test('rating: review link points at this extension, in the store of the editor', () => {
   const id = `${pkg.publisher}.${pkg.name}`;
   assert.equal(R.reviewUrl(id), `https://marketplace.visualstudio.com/items?itemName=${id}&ssr=false#review-details`);
+  assert.equal(R.reviewUrl(id, R.MARKETPLACE), R.reviewUrl(id));
+  assert.equal(R.reviewUrl(id, R.OPENVSX), `https://open-vsx.org/extension/${pkg.publisher}/${pkg.name}/reviews`);
+});
+
+test('rating v2.2: the store comes from the editor (VS Code: Marketplace, others: Open VSX)', () => {
+  const st = (appName, uriScheme) => R.storeFor({ appName, uriScheme });
+  assert.equal(st('Visual Studio Code', 'vscode'), R.MARKETPLACE);
+  assert.equal(st('Visual Studio Code - Insiders', 'vscode-insiders'), R.MARKETPLACE);
+  assert.equal(st('Visual Studio Code', undefined), R.MARKETPLACE, 'vscode.dev and Codespaces');
+  assert.equal(st('Cursor', 'cursor'), R.OPENVSX);
+  assert.equal(st('Windsurf', 'windsurf'), R.OPENVSX);
+  assert.equal(st('VSCodium', 'vscodium'), R.OPENVSX);
+  assert.equal(st('Trae', 'trae'), R.OPENVSX);
+  assert.equal(st('code-server', 'code-oss'), R.OPENVSX);
+  assert.equal(st('Positron', 'positron'), R.OPENVSX);
+  assert.equal(R.storeFor(undefined), R.MARKETPLACE, 'unknown keeps the Marketplace');
+  assert.equal(R.storeFor({}), R.MARKETPLACE);
 });
 
 test('rating: manifest has an askForRating setting, default true', () => {
@@ -273,51 +302,58 @@ function fake(o = {}) {
   return { vscode, context, calls, data, clock, make, setAnswer: (a) => { answer = a; } };
 }
 
-test('rating: wiring asks once in the second session, opens the review page on "Rate it"', async () => {
+test('rating v2.3: wiring asks at the 2nd file 30 minutes after the 1st, never in a window\'s first 2 minutes', async () => {
   const f = fake({ answer: R.RATE });
   let p = f.make();
   for (let i = 0; i < 5; i++) await p.success(fileUri(`/w/a${i}.docx`));
-  assert.equal(f.calls.shown.length, 0, 'session 1');
-  f.clock.t = T0 + 3 * HOUR;
-  p = f.make();
+  assert.equal(f.calls.shown.length, 0, '5 files at once');
+  f.clock.t = T0 + 29 * MIN;
   await p.success(fileUri('/w/b.docx'));
-  assert.equal(f.calls.shown.length, 0, 'session 2, 3 hours later: no');
-  f.clock.t = T0 + 5 * HOUR;
-  p = f.make();
+  assert.equal(f.calls.shown.length, 0, '29 minutes later: no');
+  f.clock.t = T0 + 40 * MIN;
+  p = f.make(); // a new window, or a reload that restores 2 tabs
   await p.success(fileUri('/w/c.docx'));
+  await p.success(fileUri('/w/c2.docx'));
+  f.clock.t += 119 * 1000;
+  await p.success(fileUri('/w/c3.docx'));
+  assert.equal(f.calls.shown.length, 0, 'not in the first 2 minutes of a window (no ask on open)');
+  f.clock.t = T0 + 43 * MIN;
   await p.success(fileUri('/w/d.docx'));
-  assert.equal(f.calls.shown.length, 1, 'session 3, 5 hours after session 1');
+  assert.equal(f.calls.shown.length, 1, '3 minutes into the window, 43 minutes after the first file');
   assert.deepEqual(f.calls.shown[0].slice(0, 2), ['Is X Viewer useful? A rating helps others find it.', [R.RATE, R.LATER, R.NEVER]]);
   assert.deepEqual(f.calls.opened, [R.reviewUrl('zovo.x')]);
   assert.equal(f.data.get(R.STATE_KEY).done, true);
   f.clock.t = T0 + 30 * DAY;
-  await f.make().success();
+  p = f.make();
+  await p.success();
+  f.clock.t += 5 * MIN;
+  await p.success();
   assert.equal(f.calls.shown.length, 1, 'never again after "Rate it"');
 });
 
 test('rating: wiring waits 3 s after the success; a failure in that time cancels the ask', async () => {
   const f = fake({ answer: R.LATER });
-  await f.make().success(fileUri('/w/a.docx'));
-  f.clock.t = T0 + 6 * HOUR;
   let p = f.make(40);
+  await p.success(fileUri('/w/a.docx'));
+  f.clock.t = T0 + 6 * HOUR;
   const t = Date.now();
   await p.success(fileUri('/w/b.docx'));
   assert.equal(f.calls.shown.length, 1);
   assert.ok(Date.now() - t >= 35, 'shown after the delay, not at once');
 
   const g = fake({ answer: R.LATER });
-  await g.make().success(fileUri('/w/a.docx'));
-  g.clock.t = T0 + 6 * HOUR;
   p = g.make(40);
+  await p.success(fileUri('/w/a.docx'));
+  g.clock.t = T0 + 6 * HOUR;
   const pending = p.success(fileUri('/w/b.docx'));
   await p.failure(); // the next file fails while the ask waits
   await pending;
   assert.equal(g.calls.shown.length, 0, 'never next to an error');
 
   const h = fake({ answer: R.LATER });
-  await h.make().success(fileUri('/w/a.docx'));
-  h.clock.t = T0 + 6 * HOUR;
   p = h.make(40);
+  await p.success(fileUri('/w/a.docx'));
+  h.clock.t = T0 + 6 * HOUR;
   const pend = p.success(fileUri('/w/b.docx'));
   h.vscode.window.state.focused = false; // the user switched to another app
   await pend;
@@ -328,45 +364,38 @@ test('rating: wiring waits 3 s after the success; a failure in that time cancels
 test('rating: wiring ignores walkthrough samples', async () => {
   const f = fake({ answer: R.RATE });
   const sample = fileUri(`${EXT_DIR}/media/sample/Q3 Field Report.docx`);
-  await f.make().success(sample);
-  f.clock.t = T0 + 6 * HOUR;
   let p = f.make();
   await p.success(sample);
+  f.clock.t = T0 + 6 * HOUR;
+  await p.success(sample);
   await p.success({ sample: true });
-  assert.equal(f.calls.shown.length, 0, 'samples in 2 sessions: no ask');
+  assert.equal(f.calls.shown.length, 0, 'samples 6 hours apart: no ask');
   assert.equal(f.data.get(R.STATE_KEY), undefined, 'not even stored');
+  p = f.make();
   await p.success(fileUri('/w/real.docx'));
   assert.equal(f.calls.shown.length, 0, '1 real file: no ask');
-  f.clock.t = T0 + 12 * HOUR;
-  p = f.make();
+  f.clock.t = T0 + 7 * HOUR;
   await p.success(sample);
-  assert.equal(f.calls.shown.length, 0, 'a sample does not make the second session');
+  assert.equal(f.calls.shown.length, 0, 'a sample 1 hour later does not count');
   await p.success(fileUri('/w/real2.docx'));
-  assert.equal(f.calls.shown.length, 1, 'the second real file, in a session 6 hours later');
+  assert.equal(f.calls.shown.length, 1, 'the second real file, 1 hour after the first');
 });
 
 test('rating: wiring, a failure in the session blocks the ask; "Later" then 7 days', async () => {
   const f = fake({ answer: R.LATER });
+  const use = async (t, fail) => { f.clock.t = t; const p = f.make(); if (fail) await p.failure(); await p.success(); f.clock.t += 3 * MIN; await p.success(); };
   let p = f.make();
   for (let i = 0; i < 3; i++) await p.success();
-  f.clock.t = T0 + 2 * DAY;
-  p = f.make();
-  await p.failure();
-  await p.success();
+  await use(T0 + 2 * DAY, true);
   assert.equal(f.calls.shown.length, 0, 'never after an error');
-  f.clock.t = T0 + 4 * DAY;
-  p = f.make();
-  await p.success();
-  assert.equal(f.calls.shown.length, 1, 'next session, 2 days after the failure');
+  await use(T0 + 4 * DAY);
+  assert.equal(f.calls.shown.length, 1, 'next window, 2 days after the failure');
   assert.equal(f.calls.opened.length, 0, '"Later" opens nothing');
-  f.clock.t = T0 + 10 * DAY;
-  await f.make().success();
+  await use(T0 + 10 * DAY);
   assert.equal(f.calls.shown.length, 1, '6 days later: no');
-  f.clock.t = T0 + 11 * DAY;
-  await f.make().success();
+  await use(T0 + 11 * DAY);
   assert.equal(f.calls.shown.length, 2, '7 days later: the last ask');
-  f.clock.t = T0 + 40 * DAY;
-  await f.make().success();
+  await use(T0 + 40 * DAY);
   assert.equal(f.calls.shown.length, 2, 'never a third time');
 });
 
@@ -395,11 +424,15 @@ test('rating: wiring respects the setting, v1 and v2 answers and a missing globa
   const v2 = fake({ answer: R.RATE, data: [[R.STATE_KEY, { count: 12, days: ['2026-10-20', '2026-10-21'], asks: 1, nextAskAt: 0, lastErrorAt: 0, done: true }]] });
   await v2.make().success();
   assert.equal(v2.calls.shown.length, 0, '"No thanks" in v2 is kept');
-  assert.equal(v2.data.get(R.STATE_KEY).rules, '2.1', 'stored in the v2.1 shape');
+  assert.equal(v2.data.get(R.STATE_KEY).rules, R.RULES, 'stored in the current shape');
 
   const v2open = fake({ answer: R.LATER, data: [[R.STATE_KEY, { count: 2, days: ['2026-10-30'], asks: 0, nextAskAt: 0, lastErrorAt: 0, done: false }]] });
-  await v2open.make().success();
-  assert.equal(v2open.calls.shown.length, 1, 'a v2 user with use days ago is asked at the next file');
+  const w = v2open.make();
+  await w.success();
+  assert.equal(v2open.calls.shown.length, 0, 'not at the file that opened the window');
+  v2open.clock.t += 3 * MIN;
+  await w.success();
+  assert.equal(v2open.calls.shown.length, 1, 'a v2 user with use days ago is asked at the next file, 2+ minutes into the window');
 
   const none = R.createRatingPrompt({ vscode: off.vscode, context: {}, extensionId: 'zovo.x', section: 'x', name: 'X' });
   await none.success();
@@ -416,6 +449,131 @@ test('rating: wiring never throws when VS Code calls fail', async () => {
   const g = fake();
   Object.defineProperty(g.context, 'extensionUri', { get() { throw new Error('gone'); } });
   await g.make().success();
+});
+
+test('rating v2.2: in Cursor (Open VSX), "Rate it" opens the Open VSX reviews page', async () => {
+  const f = fake({ answer: R.RATE });
+  f.vscode.env.appName = 'Cursor';
+  f.vscode.env.uriScheme = 'cursor';
+  let p = f.make();
+  await p.success(fileUri('/w/a.docx'));
+  f.clock.t = T0 + 6 * HOUR;
+  await p.success(fileUri('/w/b.docx'));
+  assert.equal(f.calls.shown.length, 1);
+  assert.deepEqual(f.calls.opened, ['https://open-vsx.org/extension/zovo/x/reviews']);
+  const g = fake({ answer: R.RATE });
+  g.vscode.env.appName = 'Visual Studio Code';
+  g.vscode.env.uriScheme = 'vscode';
+  p = g.make();
+  await p.success(fileUri('/w/a.docx'));
+  g.clock.t = T0 + 6 * HOUR;
+  await p.success(fileUri('/w/b.docx'));
+  assert.deepEqual(g.calls.opened, ['https://marketplace.visualstudio.com/items?itemName=zovo.x&ssr=false#review-details']);
+});
+
+test('rating v2.3: one window that stays open asks at the 2nd file 30 minutes on, then never again in it', async () => {
+  const f = fake({ answer: R.LATER });
+  const p = f.make(); // one window, never closed
+  await p.success(fileUri('/w/a.docx'));
+  f.clock.t = T0 + 20 * MIN;
+  await p.success(fileUri('/w/b.docx'));
+  assert.equal(f.calls.shown.length, 0, '20 minutes later: no');
+  f.clock.t = T0 + 31 * MIN;
+  await p.success(fileUri('/w/c.docx'));
+  assert.equal(f.calls.shown.length, 1, '31 minutes later in the same window: ask');
+  f.clock.t = T0 + 6 * HOUR;
+  await p.success(fileUri('/w/d.docx'));
+  assert.equal(f.data.get(R.STATE_KEY).sessions.length, 2, 'a window open 4 hours still starts a new session');
+  f.clock.t = T0 + 20 * DAY;
+  await p.success(fileUri('/w/e.docx'));
+  assert.equal(f.calls.shown.length, 1, 'still at most 1 ask per window');
+});
+
+test('rating v2.2: in a long window, a failure blocks its session and 24 hours, not the later sessions', async () => {
+  const f = fake({ answer: R.NEVER });
+  await f.make().success(fileUri('/w/a.docx')); // an earlier window: session 1
+  f.clock.t = T0 + 6 * HOUR;
+  const p = f.make();
+  await p.failure();
+  await p.success(fileUri('/w/b.docx'));
+  assert.equal(f.calls.shown.length, 0, 'same session as the failure');
+  f.clock.t = T0 + 6 * HOUR + 23 * HOUR;
+  await p.success(fileUri('/w/c.docx'));
+  assert.equal(f.calls.shown.length, 0, 'new session, but within 24 h of the failure');
+  f.clock.t = T0 + 6 * HOUR + 30 * HOUR;
+  await p.success(fileUri('/w/d.docx'));
+  assert.equal(f.calls.shown.length, 1, '30 h after the failure, a new session in the same window: ask');
+});
+
+test('rating v2.3: constants', () => {
+  assert.equal(R.RULES, '2.3');
+  assert.equal(R.MIN_FILES, 2);
+  assert.equal(R.MIN_SPAN_MS, 30 * MIN);
+  assert.equal(R.WARMUP_MS, 2 * MIN);
+  assert.equal(R.RETRY_DAYS, 1);
+  assert.equal(R.LATER_DAYS, 7);
+  assert.equal(R.MAX_ASKS, 2);
+  assert.equal(R.freshState().rules, '2.3');
+});
+
+test('rating v2.3: an ask with no answer may come back 1 day later; "Later" and closing wait 7 days', () => {
+  const t1 = T0 + DAY;
+  const shown = R.recordAnswer(ready(), 'shown', t1); // the message hid into the bell, the window closed
+  assert.equal(shown.nextAskAt, t1 + DAY);
+  assert.equal(R.decide(opens(1, t1 + 23 * HOUR, shown), env({ now: t1 + 23 * HOUR })), false, '23 hours later');
+  assert.equal(R.decide(opens(1, t1 + DAY, shown), env({ now: t1 + DAY })), true, '1 day later: the second and last ask');
+  for (const a of [R.LATER, undefined]) {
+    const s = R.recordAnswer(shown, a, t1 + 5 * MIN);
+    assert.equal(s.nextAskAt, t1 + 5 * MIN + 7 * DAY, String(a));
+    assert.equal(s.done, false);
+  }
+  const s2 = R.recordAnswer(R.recordAnswer(opens(1, t1 + DAY, shown), 'shown', t1 + DAY), undefined, t1 + DAY);
+  assert.equal(s2.done, true, 'the second ask is the last, answered or not');
+});
+
+test('rating v2.3: a message left in the bell is not answered; the next window may ask once more after 1 day', async () => {
+  const f = fake();
+  f.vscode.window.showInformationMessage = (msg, ...items) => { f.calls.shown.push([msg, items, f.clock.t]); return new Promise(() => {}); };
+  let p = f.make();
+  await p.success(fileUri('/w/a.docx'));
+  f.clock.t = T0 + HOUR;
+  p.success(fileUri('/w/b.docx')); // the message stays open (hidden in the bell) and is never answered
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(f.calls.shown.length, 1);
+  assert.equal(f.data.get(R.STATE_KEY).asks, 1);
+  const again = async (t) => { f.clock.t = t; p = f.make(); await p.success(); f.clock.t += 3 * MIN; p.success(); await new Promise((r) => setTimeout(r, 20)); };
+  await again(T0 + HOUR + 20 * HOUR);
+  assert.equal(f.calls.shown.length, 1, '20 hours later: no');
+  await again(T0 + HOUR + 25 * HOUR);
+  assert.equal(f.calls.shown.length, 2, 'a day later: the last ask');
+  await again(T0 + 30 * DAY);
+  assert.equal(f.calls.shown.length, 2, 'never a third time');
+});
+
+test('rating v2.3: openReview() opens the review page of this editor and ends the ask; pickItem() names the store', async () => {
+  const f = fake({ answer: R.RATE });
+  let p = f.make();
+  assert.equal(p.reviewUrl, R.reviewUrl('zovo.x'));
+  assert.deepEqual(p.pickItem(), { label: '$(star) Rate X Viewer', description: 'opens the Marketplace review page', zovoRate: true });
+  await p.success(fileUri('/w/a.docx'));
+  await p.openReview(); // the footer "Rate" link or the "Rate" pick row
+  assert.deepEqual(f.calls.opened, [R.reviewUrl('zovo.x')]);
+  assert.equal(f.data.get(R.STATE_KEY).done, true);
+  f.clock.t = T0 + 2 * HOUR;
+  await p.success(fileUri('/w/b.docx'));
+  assert.equal(f.calls.shown.length, 0, 'no ask after the user opened the review page');
+  const c = fake();
+  c.vscode.env.appName = 'Cursor';
+  c.vscode.env.uriScheme = 'cursor';
+  p = c.make();
+  assert.equal(p.pickItem().description, 'opens the Open VSX review page');
+  await p.openReview();
+  assert.deepEqual(c.calls.opened, ['https://open-vsx.org/extension/zovo/x/reviews']);
+  const broken = fake();
+  broken.vscode.env.openExternal = async () => { throw new Error('no browser'); };
+  await broken.make().openReview(); // never throws
+  const none = R.createRatingPrompt({ vscode: broken.vscode, context: {}, extensionId: 'zovo.x', section: 'x', name: 'X' });
+  await none.openReview();
 });
 
 test('rating: no network module and no telemetry in rate.js', () => {

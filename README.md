@@ -1,8 +1,10 @@
-# Bash & Shell Script Formatter with shfmt built in
+# Shell Formatter for Bash & Zsh
 
-Format bash, sh, zsh and bats scripts in VS Code with shfmt. The shfmt engine ships inside the extension, so there is nothing to download or install. Free, no sign-in, works offline.
+Format bash, sh, zsh, bats and mksh scripts in VS Code with shfmt built in. The shfmt engine ships inside the extension as WebAssembly, so there is nothing to download or install. Free, no sign-in, works offline.
 
 ![A messy deploy script formatted with Shift+Alt+F in VS Code. The status bar shows shfmt 3.14.1 and the tooltip shows the dialect, the indent source and the format time.](images/formatted.png)
+
+Free, with no limits:
 
 - Format Document (Shift+Alt+F, Shift+Option+F on macOS), Format Selection and format on save.
 - The same output as the shfmt 3.14.1 command line tool, byte for byte: 354 of 354 runs on 178 real scripts from GitHub projects and Homebrew, with two option sets. The 19 scripts that shfmt itself rejects get the same error.
@@ -12,20 +14,13 @@ Format bash, sh, zsh and bats scripts in VS Code with shfmt. The shfmt engine sh
 - Never touches Dockerfiles, .env files, fish or csh scripts.
 - A 2 MB script formats in about 0.2 s. Files over 10 MB get a message instead of a frozen editor.
 
-## Why this one
+Zovo Pro: USD 19 once, for the Pro tools in every Zovo extension. Each Pro tool below has 3 free tries on this computer, and a try is used only when the tool gives you a result:
 
-The most installed shell formatter on the Marketplace downloads a separate shfmt program the first time it runs. Its most discussed GitHub issues come from that design and from formatting files that are not shell scripts. Each point below links the issue and says what this extension does instead.
+- **Format All Shell Scripts in a Folder**: checks every script in a folder and its subfolders (by name, or by a `#!` line naming a shell), says how many would change, then formats them all or gives a Markdown report.
+- **Formatting Check with a Patch File**: changes nothing and opens one unified diff of what formatting would do, with the list of scripts that are not formatted and the `shfmt -d` command for CI. Apply it with `patch -p1` or `git apply`.
+- **Minify a Script to a Copy**: writes `name.min.sh` next to the script with comments and spacing removed (shfmt -s, then -mn), keeps the `#!` line, and parses the copy again to check that it has the same commands. The original stays as it is.
 
-| Problem reported by users | Issues | What Shell Formatter does |
-|---|---|---|
-| "There is no formatter for shellscript files installed" after an update or a failed download | [#396](https://github.com/foxundermoon/vs-shell-format/issues/396) (94 comments, 119 reactions), [#402](https://github.com/foxundermoon/vs-shell-format/issues/402), [#401](https://github.com/foxundermoon/vs-shell-format/issues/401), [#405](https://github.com/foxundermoon/vs-shell-format/issues/405), [#295](https://github.com/foxundermoon/vs-shell-format/issues/295) | shfmt is compiled to WebAssembly and packed in the extension. The formatter is ready as soon as a shell script opens. The release gate installs the package in an empty VS Code profile with no network step and formats 34 files. |
-| A program is downloaded without asking; offline, Apple Silicon, WSL, Remote SSH and dev containers fail | [#46](https://github.com/foxundermoon/vs-shell-format/issues/46), [#39](https://github.com/foxundermoon/vs-shell-format/issues/39), [#230](https://github.com/foxundermoon/vs-shell-format/issues/230), [#136](https://github.com/foxundermoon/vs-shell-format/issues/136), [#147](https://github.com/foxundermoon/vs-shell-format/issues/147), [#393](https://github.com/foxundermoon/vs-shell-format/issues/393) | No download and no native program. The same WebAssembly file runs on macOS, Linux and Windows, on Intel and ARM, locally and on a remote host. |
-| Dockerfiles broken (a trailing backslash removed), crontabs and other files formatted | [#304](https://github.com/foxundermoon/vs-shell-format/issues/304) (37 reactions), [#176](https://github.com/foxundermoon/vs-shell-format/issues/176) (25 reactions), [#258](https://github.com/foxundermoon/vs-shell-format/issues/258), [#62](https://github.com/foxundermoon/vs-shell-format/issues/62) | It formats only shell scripts and bats files. Dockerfiles, `.env` files, fish and csh scripts are never changed. The gate checks a Dockerfile and a `.env` file. |
-| .editorconfig ignored; settings not per folder | [#66](https://github.com/foxundermoon/vs-shell-format/issues/66), [#64](https://github.com/foxundermoon/vs-shell-format/issues/64) | `.editorconfig` is read for each file, with the same keys as shfmt. Every setting can be set per workspace folder. |
-| Errors in a popup, no line number | [#231](https://github.com/foxundermoon/vs-shell-format/issues/231), [#37](https://github.com/foxundermoon/vs-shell-format/issues/37) | The error goes to the Problems panel at the line and column shfmt reports. The status bar item turns yellow. Nothing pops up. |
-| Scripts without a `.sh` ending | [#308](https://github.com/foxundermoon/vs-shell-format/issues/308) | VS Code opens files with a `#!/bin/bash` or `#!/bin/sh` first line as shell scripts, and the dialect comes from that line. |
-
-Issue numbers and counts were read from GitHub on 2026-11-08.
+Run them from the Command Palette, the status bar menu, or right-click a folder (or a script, for Minify) in the Explorer: the entries start with "Zovo Pro:". The folder tools read each script's indentation the way the editor does, and follow your settings and .editorconfig.
 
 ## How to use
 
@@ -78,7 +73,9 @@ No network requests, no telemetry, no account. The formatter reads only the open
 
 ## Support Zovo
 
-Zovo extensions are free, with no ads and no tracking. They are made by [theluckystrike](https://github.com/theluckystrike) on GitHub. If this one saves you time, you can support the work:
+Zovo Pro: USD 19 once, every Zovo viewer. [Get Zovo Pro on GitHub Sponsors](https://github.com/sponsors/theluckystrike/sponsorships?tier_id=679878) to turn on the Pro tools in this extension and in the other Zovo extensions you use. The free features stay free.
+
+Zovo extensions have no ads and no tracking. They are made by [theluckystrike](https://github.com/theluckystrike) on GitHub. You can also support the work with no Pro:
 
 - [Sponsor on GitHub](https://github.com/sponsors/theluckystrike)
 - [PayPal](https://www.paypal.com/paypalme/najzzz)
@@ -86,11 +83,9 @@ Zovo extensions are free, with no ads and no tracking. They are made by [theluck
 
 ## More tools by Zovo
 
-- [HAR Viewer & HAR File Analyzer (HTTP Archive, Network Log)](https://marketplace.visualstudio.com/items?itemName=zovo.zovo-har-viewer) opens HAR files from browser DevTools with a timing waterfall, filters and a redacted copy for sharing.
-- [Large JSON Viewer, JSON Browser & JSON Tree](https://marketplace.visualstudio.com/items?itemName=zovo.zovo-json-tree-viewer) shows large JSON files as a searchable tree, copies JSONPath and turns arrays of objects into a table.
-- [ZIP Viewer & Archive Explorer (JAR, TAR, GZ)](https://marketplace.visualstudio.com/items?itemName=zovo.zip-archive-explorer) browses ZIP, JAR, VSIX, TAR and GZ files, opens entries in tabs and extracts them safely.
-- [Hex Viewer & Binary Viewer, Hex Editor (Large Files)](https://marketplace.visualstudio.com/items?itemName=zovo.zovo-hex-viewer) opens files of any size in under a second, with a data inspector and byte-by-byte compare.
-- [JSONL Viewer, Large JSONL Table & NDJSON Viewer](https://marketplace.visualstudio.com/items?itemName=zovo.zovo-jsonl-viewer) opens JSONL and NDJSON files as a table, as records or as a chat view.
+- [PDF Viewer & PDF Reader to Read and View PDF (Dark Mode)](https://marketplace.visualstudio.com/items?itemName=zovo.pdf-viewer-dark) reads PDFs with a real dark mode, search, an outline and thumbnails.
+- [XLSX Viewer, Excel Viewer, CSV Viewer & Parquet Viewer (XLS, CSV Preview)](https://marketplace.visualstudio.com/items?itemName=zovo.table-viewer-vscode) opens CSV, TSV, Excel and Parquet files as a sortable, filterable table.
+- [DOCX Viewer & ODT Viewer, Word Document Preview (Dark Mode)](https://marketplace.visualstudio.com/items?itemName=zovo.docx-viewer-vscode) previews Word and ODT files with dark mode, an outline and search.
 
 See [all Zovo extensions on the Marketplace](https://marketplace.visualstudio.com/publishers/zovo).
 

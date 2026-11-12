@@ -1,8 +1,8 @@
 {
   "name": "zovo-shell-formatter",
-  "displayName": "Bash & Shell Script Formatter: shfmt Built In, Format on Save",
-  "description": "Free and offline. Format shell scripts (bash, sh, zsh, bats, mksh) with shfmt compiled to WebAssembly: nothing to download or install. Reads .editorconfig, puts syntax errors in Problems, skips Dockerfiles and .env files, and checks that formatting keeps the same commands.",
-  "version": "0.1.0",
+  "displayName": "Shell Formatter for Bash & Zsh",
+  "description": "Shell formatter for VS Code: format bash, sh, zsh, bats and mksh scripts with shfmt built in as WebAssembly, so there is nothing to install. Reads .editorconfig, shows syntax errors in Problems, skips .env files and checks that formatting keeps the same commands. Free and offline.",
+  "version": "0.1.1",
   "publisher": "zovo",
   "license": "MIT",
   "icon": "icon.png",
@@ -20,31 +20,11 @@
     "Other"
   ],
   "keywords": [
-    "shell format",
     "shell formatter",
     "bash formatter",
     "shfmt",
-    "sh formatter",
-    "zsh formatter",
-    "bash beautify",
-    "shell script formatter",
-    "shell beautifier",
-    "format shell script",
-    "bash",
-    "shell",
-    "shellscript",
-    "sh",
-    "zsh",
-    "bats",
-    "mksh",
-    "posix",
-    "editorconfig",
-    "format on save",
-    "formatter",
-    "beautify",
-    "devops",
-    "offline",
-    "webassembly"
+    "shell format",
+    "format on save"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
@@ -89,6 +69,21 @@
         "category": "Shell Formatter"
       },
       {
+        "command": "shellFormatter.formatFolder",
+        "title": "Format All Shell Scripts in a Folder (Pro)",
+        "category": "Shell Formatter"
+      },
+      {
+        "command": "shellFormatter.checkFolder",
+        "title": "Formatting Check with a Patch File (Pro)",
+        "category": "Shell Formatter"
+      },
+      {
+        "command": "shellFormatter.minifyCopy",
+        "title": "Minify a Script to a Copy (Pro)",
+        "category": "Shell Formatter"
+      },
+      {
         "command": "shellFormatter.openSample",
         "title": "Open a Sample Script",
         "category": "Shell Formatter"
@@ -112,6 +107,48 @@
         "command": "shellFormatter.moreViewers",
         "title": "More free tools by Zovo",
         "category": "Shell Formatter"
+      },
+      {
+        "command": "shellFormatter.zovoPro.folder",
+        "title": "Zovo Pro: Format All Shell Scripts in a Folder"
+      },
+      {
+        "command": "shellFormatter.zovoPro.check",
+        "title": "Zovo Pro: Formatting Check with a Patch File"
+      },
+      {
+        "command": "shellFormatter.zovoPro.minify",
+        "title": "Zovo Pro: Minify a Script to a Copy"
+      },
+      {
+        "command": "shellFormatter.getPro",
+        "title": "Get Zovo Pro (USD 19 once, all 22 Zovo extensions)",
+        "category": "Zovo Pro"
+      },
+      {
+        "command": "shellFormatter.payWithPayPal",
+        "title": "Pay for Zovo Pro with PayPal (USD 19, team of 5 USD 59)",
+        "category": "Zovo Pro"
+      },
+      {
+        "command": "shellFormatter.unlockWithSponsors",
+        "title": "I already paid: unlock with GitHub Sponsors",
+        "category": "Zovo Pro"
+      },
+      {
+        "command": "shellFormatter.enterLicenseKey",
+        "title": "Enter Zovo Pro license key",
+        "category": "Zovo Pro"
+      },
+      {
+        "command": "shellFormatter.removeLicense",
+        "title": "Remove Zovo Pro from this editor",
+        "category": "Zovo Pro"
+      },
+      {
+        "command": "shellFormatter.payByCard",
+        "title": "Pay for Zovo Pro by card (USD 19)",
+        "category": "Zovo Pro"
       }
     ],
     "menus": {
@@ -127,6 +164,18 @@
         {
           "command": "shellFormatter.menu",
           "when": "false"
+        },
+        {
+          "command": "shellFormatter.zovoPro.folder",
+          "when": "false"
+        },
+        {
+          "command": "shellFormatter.zovoPro.check",
+          "when": "false"
+        },
+        {
+          "command": "shellFormatter.zovoPro.minify",
+          "when": "false"
         }
       ],
       "editor/context": [
@@ -134,6 +183,48 @@
           "command": "shellFormatter.format",
           "when": "editorLangId == shellscript || editorLangId == bats",
           "group": "1_modification@9"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "shellFormatter.zovoPro.minify",
+          "when": "resourceExtname == .sh",
+          "group": "zovoPro@1"
+        },
+        {
+          "command": "shellFormatter.zovoPro.minify",
+          "when": "resourceExtname == .bash",
+          "group": "zovoPro@1"
+        },
+        {
+          "command": "shellFormatter.zovoPro.minify",
+          "when": "resourceExtname == .zsh",
+          "group": "zovoPro@1"
+        },
+        {
+          "command": "shellFormatter.zovoPro.minify",
+          "when": "resourceExtname == .ksh",
+          "group": "zovoPro@1"
+        },
+        {
+          "command": "shellFormatter.zovoPro.minify",
+          "when": "resourceExtname == .mksh",
+          "group": "zovoPro@1"
+        },
+        {
+          "command": "shellFormatter.zovoPro.minify",
+          "when": "resourceExtname == .bats",
+          "group": "zovoPro@1"
+        },
+        {
+          "command": "shellFormatter.zovoPro.folder",
+          "when": "explorerResourceIsFolder",
+          "group": "zovoPro@1"
+        },
+        {
+          "command": "shellFormatter.zovoPro.check",
+          "when": "explorerResourceIsFolder",
+          "group": "zovoPro@1"
         }
       ]
     },
@@ -257,7 +348,7 @@
         "shellFormatter.askForRating": {
           "type": "boolean",
           "default": true,
-          "description": "Ask for a Marketplace rating after scripts were formatted without an error in 2 sessions at least 4 hours apart. \"Later\" asks one more time after 7 days, \"No thanks\" never asks again. It never asks after an error or more than 2 times. Nothing is sent anywhere."
+          "description": "Ask for a Marketplace rating at the earliest after scripts were formatted without an error on two occasions at least 30 minutes apart. \"Later\" asks one more time after 7 days, \"No thanks\" never asks again. It never asks after an error or more than 2 times. Nothing is sent anywhere."
         },
         "shellFormatter.showSupportLinks": {
           "type": "boolean",
@@ -314,6 +405,14 @@
             "completionEvents": [
               "onCommand:workbench.action.openSettings"
             ]
+          },
+          {
+            "id": "zovo-related",
+            "title": "Files that go with this one",
+            "description": "If your project also has PDF files or spreadsheets and CSV files, these free Zovo extensions open them. A link opens the extension page, and you choose there whether to install it.\n[PDF Viewer](command:extension.open?%5B%22zovo.pdf-viewer-dark%22%5D)\n[XLSX and CSV Viewer](command:extension.open?%5B%22zovo.table-viewer-vscode%22%5D)",
+            "media": {
+              "markdown": "walkthrough/related.md"
+            }
           }
         ]
       }
@@ -340,6 +439,6 @@
     "url": "https://github.com/theluckystrike/shell-formatter-vscode"
   },
   "sponsor": {
-    "url": "https://github.com/sponsors/theluckystrike"
+    "url": "https://github.com/sponsors/theluckystrike/sponsorships?tier_id=679878"
   }
 }
