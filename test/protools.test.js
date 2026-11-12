@@ -75,7 +75,7 @@ test('Format all scripts in a folder: Escape uses no try, report changes nothing
     assert.equal(trial(s, 'folder'), 2);
     assert.equal(fs.readFileSync(path.join(root, 'scripts', 'deploy.sh'), 'utf8'), '#!/bin/bash\n# deploy\nif [ -n "$1" ]; then\n    echo "hi $1"\nfi\n');
     assert.equal(fs.readFileSync(path.join(root, 'run'), 'utf8'), '#!/usr/bin/env bash\nfor x in a b; do echo $x; done\n');
-    assert.match(s.log.info.at(-1), /^Formatted 2 shell scripts\.$/);
+    assert.match(s.log.info.at(-1), /^Formatted 2 shell scripts\. Zovo Pro: 1 of 3 free tries left for this tool\.$/);
     // all formatted now except the broken one: the report still lists it; with only formatted scripts there is no try
     const clean = fs.mkdtempSync(path.join(dir, 'clean-'));
     fs.writeFileSync(path.join(clean, 'a.sh'), 'echo a\n');
@@ -121,7 +121,7 @@ test('Minify to a copy: writes name.min.sh with the #! line, original unchanged;
     assert.equal(out, '#!/bin/bash\nif [ -n "$1" ];then\necho "hi $1"\nfi\n');
     assert.equal(fs.readFileSync(src, 'utf8'), MESSY);
     assert.equal(trial(s, 'minify'), 1);
-    assert.match(s.log.status.at(-1), /deploy\.min\.sh: .* same commands \(checked\)\. deploy\.sh is unchanged\./);
+    assert.match(s.log.status.at(-1), /deploy\.min\.sh: .* same commands \(checked\)\. deploy\.sh is unchanged\. Zovo Pro: 2 of 3 free tries left for this tool\.$/);
     await s.commands.get('shellFormatter.minifyCopy')(s.vscode.Uri.file(path.join(root, 'broken.sh')));
     assert.match(s.log.warn.at(-1).m, /^Minify: .*No copy was written and no free try was used\.$/);
     assert.ok(!fs.existsSync(path.join(root, 'broken.min.sh')));

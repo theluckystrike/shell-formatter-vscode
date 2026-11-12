@@ -30,6 +30,13 @@ function minName(name) {
 
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
+/** " Zovo Pro: N of 3 free tries left for this tool." after a counted try (empty with Pro). */
+function triesNote(pro, f) {
+  if (pro.licensed) return '';
+  const n = pro.left(f);
+  return ` Zovo Pro: ${n} of ${pro.TRIAL_USES || 3} free tries left for this tool.`;
+}
+
 function fmtBytes(n) {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
@@ -188,7 +195,7 @@ function createProTools(deps) {
       }
       await openUntitled('markdown', reportMarkdown(folder, rows, 'Shell scripts formatted'));
       if (done) await pro.produced('folder');
-      vscode.window.showInformationMessage(`Formatted ${plural(done, 'shell script')}${stale ? `; ${stale} changed while checking and were left as they are` : ''}.${done ? '' : ' No free try was used.'}`);
+      vscode.window.showInformationMessage(`Formatted ${plural(done, 'shell script')}${stale ? `; ${stale} changed while checking and were left as they are` : ''}.${done ? triesNote(pro, 'folder') : ' No free try was used.'}`);
       return;
     }
     await openUntitled('markdown', reportMarkdown(folder, rows, 'Shell formatting report'));
@@ -228,7 +235,7 @@ function createProTools(deps) {
     const text = patchText(folder, rows);
     await openUntitled('diff', text);
     await pro.produced('check');
-    vscode.window.setStatusBarMessage(`$(check) Shell Formatter: ${changes.length} of ${plural(rows.length, 'script')} not formatted. Nothing was changed.`, 8000);
+    vscode.window.setStatusBarMessage(`$(check) Shell Formatter: ${changes.length} of ${plural(rows.length, 'script')} not formatted. Nothing was changed.${triesNote(pro, 'check')}`, 10000);
   }
 
   // ---- minify: Minify a script to a copy ----
@@ -275,7 +282,7 @@ function createProTools(deps) {
     await pro.produced('minify');
     const a = Buffer.byteLength(before, 'utf8');
     const b = Buffer.byteLength(r.text, 'utf8');
-    vscode.window.setStatusBarMessage(`$(check) ${minName(name)}: ${fmtBytes(a)} to ${fmtBytes(b)}${a ? ` (${Math.round((1 - b / a) * 100)} % smaller)` : ''}, same commands${r.verified ? ' (checked)' : ''}. ${name} is unchanged.`, 10000);
+    vscode.window.setStatusBarMessage(`$(check) ${minName(name)}: ${fmtBytes(a)} to ${fmtBytes(b)}${a ? ` (${Math.round((1 - b / a) * 100)} % smaller)` : ''}, same commands${r.verified ? ' (checked)' : ''}. ${name} is unchanged.${triesNote(pro, 'minify')}`, 10000);
   }
 
   return { formatFolder, checkFolder, minifyCopy, listScripts, patchText, reportMarkdown };
