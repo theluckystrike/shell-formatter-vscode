@@ -16,9 +16,9 @@ Free, with no limits:
 
 Zovo Pro: USD 19 once, for the Pro tools in every Zovo extension. Each Pro tool below has 3 free tries on this computer, and a try is used only when the tool gives you a result:
 
-- **Format All Shell Scripts in a Folder**: checks every script in a folder and its subfolders (by name, or by a `#!` line naming a shell), says how many would change, then formats them all or gives a Markdown report.
-- **Formatting Check with a Patch File**: changes nothing and opens one unified diff of what formatting would do, with the list of scripts that are not formatted and the `shfmt -d` command for CI. Apply it with `patch -p1` or `git apply`.
-- **Minify a Script to a Copy**: writes `name.min.sh` next to the script with comments and spacing removed (shfmt -s, then -mn), keeps the `#!` line, and parses the copy again to check that it has the same commands. The original stays as it is.
+- Format All Shell Scripts in a Folder: checks every script in a folder and its subfolders (by name, or by a `#!` line naming a shell), says how many would change, then formats them all or gives a Markdown report.
+- Formatting Check with a Patch File: changes nothing and opens one unified diff of what formatting would do, with the list of scripts that are not formatted and the `shfmt -d` command for CI. Apply it with `patch -p1` or `git apply`.
+- Minify a Script to a Copy: writes `name.min.sh` next to the script with comments and spacing removed (shfmt -s, then -mn), keeps the `#!` line, and parses the copy again to check that it has the same commands. The original stays as it is.
 
 ![Formatting Check with a Patch File run from the Explorer on a scripts folder: one unified diff of the script that is not formatted, with the shfmt command for CI at the top.](images/pro-check-patch.png)
 
